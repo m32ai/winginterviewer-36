@@ -639,167 +639,100 @@ export const InterviewProcess = () => {
       {interviewStages.map((stage, stageIndex) => (
         <div key={stage.id} className="material-card-elevated mb-8">
           <div className="spacing-md">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
-                  <span className="text-sm font-semibold text-primary">{stageIndex + 1}</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    {editingStageName[stage.id] ? (
-                      <Input
-                        value={editStageNameText[stage.id] || ""}
-                        onChange={(e) => setEditStageNameText({
-                          ...editStageNameText,
-                          [stage.id]: e.target.value
-                        })}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            saveEditedStageName(stage.id);
-                          } else if (e.key === 'Escape') {
-                            cancelEditingStageName(stage.id);
-                          }
-                        }}
-                        onBlur={() => saveEditedStageName(stage.id)}
-                        className="text-xl font-semibold h-auto py-1 px-2 border-primary/50 focus:border-primary"
-                        autoFocus
-                      />
-                    ) : (
-                      <h3 
-                        className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors" 
-                        onClick={() => startEditingStageName(stage.id, stage.name)}
-                      >
-                        {stage.name}
-                      </h3>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => startEditingStageName(stage.id, stage.name)}
-                      className="h-7 w-7 p-0 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 transition-all duration-200"
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    
-                    <div className="flex items-center gap-6 ml-6">
-                      <div className="flex items-center gap-3">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm font-medium cursor-help">Response Type:</span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Choose how candidates will respond to questions</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <div className="flex items-center gap-2">
-                          <Type className={`h-4 w-4 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className={`text-sm transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
-                        </div>
-                        <Switch
-                          id={`response-type-${stage.id}`}
-                          checked={stage.assessmentMode === "voice-video"}
-                          onCheckedChange={(checked) => {
-                            setInterviewStages(interviewStages.map(s => 
-                              s.id === stage.id ? { 
-                                ...s, 
-                                assessmentMode: checked ? "voice-video" : "text" 
-                              } : s
-                            ));
+                          <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                    <span className="text-sm font-semibold text-primary">{stageIndex + 1}</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      {editingStageName[stage.id] ? (
+                        <Input
+                          value={editStageNameText[stage.id] || ""}
+                          onChange={(e) => setEditStageNameText({
+                            ...editStageNameText,
+                            [stage.id]: e.target.value
+                          })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditedStageName(stage.id);
+                            } else if (e.key === 'Escape') {
+                              cancelEditingStageName(stage.id);
+                            }
                           }}
-                          className="data-[state=checked]:bg-primary"
+                          onBlur={() => saveEditedStageName(stage.id)}
+                          className="text-xl font-semibold h-auto py-1 px-2 border-primary/50 focus:border-primary"
+                          autoFocus
                         />
-                        <div className="flex items-center gap-2">
-                          <Video className={`h-4 w-4 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className={`text-sm transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
-                        </div>
-                      </div>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-help">
-                              <Clock className="h-4 w-4 text-primary" />
-                              <span className="text-sm font-medium text-muted-foreground">Time Limit:</span>
-                              <Switch
-                                id={`time-limit-${stage.id}`}
-                                checked={timeLimitEnabled}
-                                onCheckedChange={(checked) => setTimeLimitEnabled(checked)}
-                                className="data-[state=checked]:bg-primary"
-                              />
-                              {timeLimitEnabled && (
-                                <>
-                                  <Input
-                                    placeholder="45"
-                                    value={stage.timeLimit || "45"}
-                                    onChange={(e) => {
-                                      setInterviewStages(interviewStages.map(s => 
-                                        s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
-                                      ));
-                                    }}
-                                    className="w-16 h-7 text-sm"
-                                  />
-                                  <span className="text-sm text-muted-foreground">min</span>
-                                </>
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Enable and set a time limit for this interview round (optional)</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-help">
-                              <Switch
-                                id={`auto-trigger-${stage.id}`}
-                                checked={stage.autoTrigger}
-                                onCheckedChange={(checked) => {
-                                  setInterviewStages(interviewStages.map(s => 
-                                    s.id === stage.id ? { ...s, autoTrigger: checked } : s
-                                  ));
-                                }}
-                                className="data-[state=checked]:bg-primary scale-110"
-                              />
-                              <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-semibold cursor-pointer text-foreground">
-                                Seamless Multi-Round Experience
-                              </Label>
+                      ) : (
+                        <h3 
+                          className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors" 
+                          onClick={() => startEditingStageName(stage.id, stage.name)}
+                        >
+                          {stage.name}
+                        </h3>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => startEditingStageName(stage.id, stage.name)}
+                        className="h-7 w-7 p-0 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 transition-all duration-200"
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      
+                      <div className="flex items-center gap-6 ml-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                              <span className="text-sm font-semibold text-foreground">
+                                Auto-Advance Qualified Candidates
+                              </span>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="cursor-help text-muted-foreground">?</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>Qualified candidates instantly proceed to the next round in the same session. If disabled, candidates must wait for manual review before advancing.</p>
+                                    <p>Qualified candidates automatically proceed to the next round without manual review. Ensures smooth candidate experience.</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Qualified candidates instantly proceed to the next round in the same session. If disabled, candidates must wait for manual review before advancing.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    <Badge variant="outline" className="mt-1">Round {stageIndex + 1}</Badge>
                   </div>
-                  <Badge variant="outline" className="mt-1">Round {stageIndex + 1}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const interviewLink = `https://winginterviewer-36-efkl4f4pd-serenechan.vercel.app/interview/${stage.id}?minMatch=${stage.minMatchPercentage || 75}`;
+                      navigator.clipboard.writeText(interviewLink);
+                    }}
+                    className="text-xs h-8"
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    Copy Link
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => deleteStage(stage.id)}
+                    disabled={interviewStages.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-destructive hover:text-destructive"
-                onClick={() => deleteStage(stage.id)}
-                disabled={interviewStages.length === 1}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
 
             {/* Only one grid for Min Match %, Question Template, and Interview Mode */}
             <div className="grid grid-cols-3 gap-6 mb-6">
@@ -967,31 +900,7 @@ export const InterviewProcess = () => {
               </div>
             </div>
 
-            {/* Share Interview Link Section */}
-            <div className="mb-6 p-4 bg-muted/20 rounded-lg border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Interview Invite Link</h4>
-                  <p className="text-xs text-muted-foreground">Share this link with candidates to start their interview</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const interviewLink = `https://winginterviewer-36-oq4ukw194-serenechan.vercel.app/interview/${stage.id}?minMatch=${stage.minMatchPercentage || 75}`;
-                    navigator.clipboard.writeText(interviewLink);
-                    // You could add a toast notification here
-                  }}
-                  className="text-xs"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Copy Link
-                </Button>
-              </div>
-              <div className="mt-2 p-2 bg-background rounded border text-xs font-mono text-muted-foreground break-all">
-                https://winginterviewer-36-oq4ukw194-serenechan.vercel.app/interview/{stage.id}?minMatch={stage.minMatchPercentage || 75}
-              </div>
-            </div>
+
 
             {/* Questions Section */}
             {interviewModes[stage.id] !== "human-interviewer" && (
@@ -1335,71 +1244,7 @@ export const InterviewProcess = () => {
                   Add Another Question
                 </Button>
                 
-                {/* AI Question Generator for Template */}
-                <div className="mt-4 pt-4 border-t border-border/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">AI Question Generator</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAiGenerator(!showAiGenerator)}
-                      className="text-xs"
-                    >
-                      {showAiGenerator ? 'Hide' : 'Generate Questions'}
-                    </Button>
-                  </div>
-                  
-                  {showAiGenerator && (
-                    <div className="space-y-3 p-4 bg-muted/20 rounded-lg border">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs font-medium">Job Role</Label>
-                          <Input
-                            placeholder="e.g., Software Engineer, Product Manager"
-                            value={aiJobRole}
-                            onChange={(e) => setAiJobRole(e.target.value)}
-                            className="text-xs mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs font-medium">Number of Questions</Label>
-                          <Select value={aiQuestionCount.toString()} onValueChange={(value) => setAiQuestionCount(parseInt(value))}>
-                            <SelectTrigger className="text-xs mt-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="3">3 questions</SelectItem>
-                              <SelectItem value="5">5 questions</SelectItem>
-                              <SelectItem value="8">8 questions</SelectItem>
-                              <SelectItem value="10">10 questions</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <Button
-                        onClick={addGeneratedQuestionsToTemplate}
-                        disabled={!aiJobRole.trim() || isGeneratingQuestions}
-                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                      >
-                        {isGeneratingQuestions ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                            Generating Questions...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Generate AI Questions
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+
             
             <div className="flex gap-3 justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => setIsCreatingTemplate(false)}>
