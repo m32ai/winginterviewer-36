@@ -816,6 +816,127 @@ export const InterviewProcess = () => {
               </div>
             </div>
 
+            {/* Question Template and Interview Mode row */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Question Template</label>
+                <Select value={stage.presetQuestions} onValueChange={(value) => {
+                  if (value === "create-new") {
+                    setIsCreatingTemplate(true);
+                  } else {
+                    // Replace questions with template questions
+                    const templateQuestions = questionTemplates[value as keyof typeof questionTemplates];
+                    if (templateQuestions) {
+                      const newQuestions: string[] = [];
+                      const newAnswerExamples: {[key: string]: string} = {};
+                      const newMcqOptions: {[key: string]: string[]} = {};
+                      const newMcqCorrectAnswers: {[key: string]: number} = {};
+                      const newQuestionType = templateQuestions.some(tq => tq.mcqOptions) ? "mixed" : "open-ended";
+                      
+                      templateQuestions.forEach((tq, index) => {
+                        newQuestions.push(tq.question);
+                        const questionKey = `${stage.id}-${index}`;
+                        
+                        if (tq.goodAnswer) {
+                          newAnswerExamples[questionKey] = tq.goodAnswer;
+                        }
+                        
+                        if (tq.mcqOptions) {
+                          newMcqOptions[questionKey] = tq.mcqOptions.options;
+                          newMcqCorrectAnswers[questionKey] = tq.mcqOptions.correctAnswer;
+                        }
+                      });
+                      
+                      setAnswerExamples({...answerExamples, ...newAnswerExamples});
+                      setMcqOptions({...mcqOptions, ...newMcqOptions});
+                      setMcqCorrectAnswers({...mcqCorrectAnswers, ...newMcqCorrectAnswers});
+                      
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { 
+                          ...s, 
+                          presetQuestions: value,
+                          questions: newQuestions,
+                          questionType: newQuestionType
+                        } : s
+                      ));
+                    } else {
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { ...s, presetQuestions: value } : s
+                      ));
+                    }
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a question template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="executive-assistant">Executive Assistant Template</SelectItem>
+                    <SelectItem value="ux-researcher">UX Researcher Template</SelectItem>
+                    <SelectItem value="product-manager">Product Manager Template</SelectItem>
+                    <SelectItem value="sdr">SDR (Sales Development Representative) Template</SelectItem>
+                    {Object.entries(customTemplates).map(([key, name]) => (
+                      <SelectItem key={key} value={key}>{name} (Custom)</SelectItem>
+                    ))}
+                    <SelectItem value="create-new" className="text-primary">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Custom Template
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pre-built question sets for specific roles
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Interview Mode</label>
+                <Select 
+                  value={interviewModes[stage.id] || "ai-fixed"}
+                  onValueChange={(value) => {
+                    setInterviewModes({
+                      ...interviewModes,
+                      [stage.id]: value
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ai-fixed">
+                      <div className="flex flex-col">
+                        <span className="font-medium">AI / Fixed Questions</span>
+                        <span className="text-xs text-muted-foreground">Pre-defined questions for consistency across candidates</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ai-freeflow">
+                      <div className="flex flex-col">
+                        <span className="font-medium">AI / Free Flow</span>
+                        <span className="text-xs text-muted-foreground">Dynamic AI interview with follow-up questions</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ai-hybrid">
+                      <div className="flex flex-col">
+                        <span className="font-medium">AI / Fixed + Free Flow</span>
+                        <span className="text-xs text-muted-foreground">Starts with fixed questions, then AI follow-ups</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="human-interviewer">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Human Interviewer</span>
+                        <span className="text-xs text-muted-foreground">Live human-conducted interview session</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="practical-assessment">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Practical Assessment / Test</span>
+                        <span className="text-xs text-muted-foreground">Coding challenges, skill tests, hands-on tasks</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
 
 
             {/* Questions Section */}
