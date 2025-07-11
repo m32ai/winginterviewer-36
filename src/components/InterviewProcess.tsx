@@ -530,32 +530,6 @@ export const InterviewProcess = () => {
                         </Tooltip>
                       </TooltipProvider>
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-help">
-                              <span className="text-sm font-medium">Type:</span>
-                              <Select value={stage.questionType || "open-ended"} onValueChange={(value) => {
-                                setInterviewStages(interviewStages.map(s => 
-                                  s.id === stage.id ? { ...s, questionType: value } : s
-                                ));
-                              }}>
-                                <SelectTrigger className="w-32 h-8 text-sm">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="open-ended">Open-ended</SelectItem>
-                                  <SelectItem value="mcq">MCQ</SelectItem>
-                                  <SelectItem value="mixed">Mixed</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Type of questions in this round</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
                   </div>
                   <Badge variant="outline" className="mt-1">Round {stageIndex + 1}</Badge>
@@ -702,12 +676,12 @@ export const InterviewProcess = () => {
                   </div>
                   <div className="flex-1">
                     <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-semibold cursor-pointer text-foreground">
-                      Auto-Advance Candidates
+                      Seamless Multi-Round Experience
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {stage.autoTrigger 
-                        ? "Candidates meeting the minimum score will automatically proceed to the next round" 
-                        : "Manual review required before advancing candidates to the next round"}
+                        ? "Qualified candidates instantly proceed to the next round in the same session - no waiting, no manual reviews" 
+                        : "Candidates must wait for manual review before advancing - creates delays between rounds"}
                     </p>
                   </div>
                 </div>
@@ -728,6 +702,23 @@ export const InterviewProcess = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-md font-medium">Questions</h4>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Default Type:</span>
+                  <Select value={stage.questionType || "open-ended"} onValueChange={(value) => {
+                    setInterviewStages(interviewStages.map(s => 
+                      s.id === stage.id ? { ...s, questionType: value } : s
+                    ));
+                  }}>
+                    <SelectTrigger className="w-28 h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open-ended">Open-ended</SelectItem>
+                      <SelectItem value="mcq">MCQ</SelectItem>
+                      <SelectItem value="mixed">Mixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               {stage.questions.length > 0 ? (
@@ -960,53 +951,84 @@ export const InterviewProcess = () => {
 
       {/* Template Creation Dialog */}
       <Dialog open={isCreatingTemplate} onOpenChange={setIsCreatingTemplate}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Custom Question Template</DialogTitle>
+            <p className="text-sm text-muted-foreground">Build a reusable question set for specific roles or interview types</p>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="templateName">Template Name</Label>
+              <Label htmlFor="templateName" className="text-sm font-medium">Template Name</Label>
               <Input
                 id="templateName"
-                placeholder="e.g., Software Engineer Template"
+                placeholder="e.g., Software Engineer Template, Marketing Manager Template"
                 value={newTemplateName}
                 onChange={(e) => setNewTemplateName(e.target.value)}
+                className="mt-1"
               />
             </div>
             
             <div>
-              <Label>Questions</Label>
-              <div className="space-y-2">
+              <Label className="text-sm font-medium">Questions</Label>
+              <div className="space-y-4 mt-2">
                 {templateQuestions.map((question, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder={`Question ${index + 1}`}
-                      value={question}
-                      onChange={(e) => updateTemplateQuestion(index, e.target.value)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeTemplateQuestion(index)}
-                      disabled={templateQuestions.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div key={index} className="border rounded-lg p-4 space-y-3 bg-muted/20">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">Question {index + 1}</span>
+                          <Select defaultValue="open-ended">
+                            <SelectTrigger className="w-32 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="open-ended">Open-ended</SelectItem>
+                              <SelectItem value="mcq">Multiple Choice</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Input
+                          placeholder="Enter your interview question..."
+                          value={question}
+                          onChange={(e) => updateTemplateQuestion(index, e.target.value)}
+                          className="text-sm"
+                        />
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Optional: Add an example of a good answer..."
+                            className="text-xs border-dashed"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeTemplateQuestion(index)}
+                        disabled={templateQuestions.length === 1}
+                        className="text-destructive hover:text-destructive mt-6"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                <Button variant="outline" onClick={addTemplateQuestion}>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={addTemplateQuestion}
+                  className="w-full border-dashed border-2 h-12 text-muted-foreground hover:text-primary hover:border-primary/50"
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Question
+                  Add Another Question
                 </Button>
               </div>
             </div>
             
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-3 justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => setIsCreatingTemplate(false)}>
                 Cancel
               </Button>
-              <Button onClick={saveTemplate}>
+              <Button onClick={saveTemplate} className="min-w-24">
                 Save Template
               </Button>
             </div>
