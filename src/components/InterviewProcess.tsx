@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { GripVertical, Trash2, Plus, Send, Pen, Clock, Edit, Type, Video, Sparkles } from "lucide-react";
+import { GripVertical, Trash2, Plus, Send, Pen, Clock, Edit, Type, Video, Sparkles, Eye } from "lucide-react";
 import { QuestionCard } from './QuestionCard';
 
 export const InterviewProcess = () => {
@@ -487,96 +487,182 @@ export const InterviewProcess = () => {
   };
 
   // AI Question Generation Functions
-  const generateQuestionsWithAI = async (jobRole: string, count: number, questionType: string) => {
+  const generateQuestionsWithAI = async (jobRole: string, count: number, questionType: string): Promise<{
+    questions: string[];
+    answerExamples: {[key: number]: string};
+    mcqOptions: {[key: number]: string[]};
+    mcqCorrectAnswers: {[key: number]: number};
+    questionTypes: {[key: number]: string};
+  }> => {
     setIsGeneratingQuestions(true);
     
     try {
       // Simulate AI API call with realistic questions
-      const questions = await simulateAIQuestionGeneration(jobRole, count, questionType);
-      return questions;
+      const result = await simulateAIQuestionGeneration(jobRole, count, questionType);
+      return result;
     } catch (error) {
       console.error('Error generating questions:', error);
-      return [];
+      return {
+        questions: [],
+        answerExamples: {},
+        mcqOptions: {},
+        mcqCorrectAnswers: {},
+        questionTypes: {}
+      };
     } finally {
       setIsGeneratingQuestions(false);
     }
   };
 
-  const simulateAIQuestionGeneration = async (jobRole: string, count: number, questionType: string): Promise<string[]> => {
+  const simulateAIQuestionGeneration = async (jobRole: string, count: number, questionType: string): Promise<{
+    questions: string[];
+    answerExamples: {[key: number]: string};
+    mcqOptions: {[key: number]: string[]};
+    mcqCorrectAnswers: {[key: number]: number};
+    questionTypes: {[key: number]: string};
+  }> => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const questionTemplates = {
       "software-engineer": [
-        "Describe a challenging technical problem you solved and the approach you took.",
-        "How do you stay updated with the latest programming languages and frameworks?",
-        "Walk me through your experience with code reviews and best practices.",
-        "Explain a time when you had to optimize performance in a critical system.",
-        "How do you handle conflicting requirements from different stakeholders?",
-        "Describe your experience with testing methodologies and quality assurance.",
-        "How do you approach debugging complex issues in production?",
-        "Tell me about a project where you had to learn a new technology quickly."
+        {
+          question: "Describe a challenging technical problem you solved and the approach you took.",
+          answerExample: "I encountered a critical performance issue in our payment processing system where transactions were timing out. I used systematic debugging, identified the bottleneck in database queries, implemented query optimization and caching, and reduced response time by 70% while maintaining data integrity.",
+          mcqOptions: ["Debugging skills", "System design", "Database optimization", "All of the above"],
+          correctAnswer: 3
+        },
+        {
+          question: "How do you stay updated with the latest programming languages and frameworks?",
+          answerExample: "I follow industry leaders on Twitter, subscribe to tech newsletters, participate in online communities like Stack Overflow and Reddit, attend conferences and meetups, contribute to open source projects, and dedicate weekly time to learning new technologies through hands-on projects.",
+          mcqOptions: ["Only when needed for work", "Through social media", "Regular learning routine", "Never"],
+          correctAnswer: 2
+        },
+        {
+          question: "Walk me through your experience with code reviews and best practices.",
+          answerExample: "I conduct thorough code reviews focusing on functionality, security, performance, and maintainability. I use checklists, provide constructive feedback, ensure test coverage, and follow team coding standards. I also participate in pair programming sessions to share knowledge.",
+          mcqOptions: ["Only check for bugs", "Focus on style only", "Comprehensive review process", "Skip when busy"],
+          correctAnswer: 2
+        },
+        {
+          question: "Explain a time when you had to optimize performance in a critical system.",
+          answerExample: "Our e-commerce platform was experiencing slow page loads during peak hours. I profiled the application, identified database query inefficiencies, implemented connection pooling, added Redis caching for frequently accessed data, and optimized frontend asset delivery, resulting in 60% faster load times.",
+          mcqOptions: ["Ignore the issue", "Add more servers", "Optimize systematically", "Blame the database"],
+          correctAnswer: 2
+        },
+        {
+          question: "How do you handle conflicting requirements from different stakeholders?",
+          answerExample: "I facilitate discussions to understand each stakeholder's perspective, identify common goals, prioritize based on business impact and technical feasibility, document decisions clearly, and maintain open communication throughout the process to ensure alignment.",
+          mcqOptions: ["Choose the loudest voice", "Avoid conflicts", "Facilitate discussion", "Ignore requirements"],
+          correctAnswer: 2
+        }
       ],
       "product-manager": [
-        "How do you prioritize features when resources are limited?",
-        "Describe a time when you had to make a difficult product decision.",
-        "How do you gather and validate user requirements?",
-        "Walk me through your experience with agile methodologies.",
-        "How do you handle feedback from multiple stakeholders?",
-        "Describe a successful product launch you were involved in.",
-        "How do you measure product success and iterate based on data?",
-        "Tell me about a time when you had to pivot a product strategy."
+        {
+          question: "How do you prioritize features when resources are limited?",
+          answerExample: "I use frameworks like RICE or MoSCoW, considering user impact, business value, technical effort, and strategic alignment. I gather input from stakeholders, validate with user research, and maintain flexibility for market changes while ensuring we deliver maximum value.",
+          mcqOptions: ["Build everything", "Use RICE framework", "Ask the CEO", "Random selection"],
+          correctAnswer: 1
+        },
+        {
+          question: "Describe a time when you had to make a difficult product decision.",
+          answerExample: "I had to sunset a feature with low adoption but vocal users. I analyzed usage data, conducted user interviews, explored alternatives, communicated transparently with affected users, provided migration support, and focused on features that served the majority of users.",
+          mcqOptions: ["Ignore the problem", "Keep the feature", "Data-driven decision", "Let engineering decide"],
+          correctAnswer: 2
+        },
+        {
+          question: "How do you gather and validate user requirements?",
+          answerExample: "I use multiple methods: user interviews, surveys, analytics data, support tickets, and stakeholder interviews. I create user personas, map user journeys, conduct usability testing, and validate assumptions through A/B testing to ensure requirements align with user needs.",
+          mcqOptions: ["Guess", "Ask stakeholders only", "Multiple validation methods", "Copy competitors"],
+          correctAnswer: 2
+        },
+        {
+          question: "Walk me through your experience with agile methodologies.",
+          answerExample: "I've led agile teams using Scrum and Kanban frameworks. I facilitate sprint planning, daily standups, sprint reviews, and retrospectives. I maintain product backlogs, track velocity, and ensure continuous delivery while adapting processes to team needs and project requirements.",
+          mcqOptions: ["Waterfall only", "Agile frameworks", "No methodology", "Whatever works"],
+          correctAnswer: 1
+        },
+        {
+          question: "How do you handle feedback from multiple stakeholders?",
+          answerExample: "I create structured feedback collection processes, categorize feedback by themes, prioritize based on impact and frequency, validate with additional research, communicate decisions transparently, and establish regular feedback loops to ensure continuous improvement.",
+          mcqOptions: ["Ignore feedback", "Implement all feedback", "Structured approach", "Choose randomly"],
+          correctAnswer: 2
+        }
       ],
       "ux-designer": [
-        "Walk me through your design process from research to final deliverables.",
-        "How do you handle feedback from stakeholders and users?",
-        "Describe a time when you had to design for accessibility.",
-        "How do you balance user needs with business requirements?",
-        "Tell me about a project where you had to work with technical constraints.",
-        "How do you conduct user research and translate insights into design?",
-        "Describe a time when you had to defend your design decisions.",
-        "How do you stay updated with design trends and best practices?"
-      ],
-      "data-scientist": [
-        "Describe a complex data analysis project you worked on.",
-        "How do you handle missing or inconsistent data?",
-        "Walk me through your experience with machine learning models.",
-        "How do you validate your findings and ensure accuracy?",
-        "Describe a time when you had to explain technical concepts to non-technical stakeholders.",
-        "How do you stay updated with the latest data science techniques?",
-        "Tell me about a project where you had to work with large datasets.",
-        "How do you approach feature engineering and model selection?"
-      ],
-      "marketing-manager": [
-        "How do you develop and execute marketing campaigns?",
-        "Describe a successful campaign you managed and the results achieved.",
-        "How do you measure ROI and optimize marketing spend?",
-        "Walk me through your experience with digital marketing channels.",
-        "How do you handle budget constraints while achieving goals?",
-        "Describe a time when you had to pivot a marketing strategy.",
-        "How do you stay updated with marketing trends and best practices?",
-        "Tell me about a campaign that didn't perform as expected and how you handled it."
+        {
+          question: "Walk me through your design process from research to final deliverables.",
+          answerExample: "I start with user research to understand needs and pain points, create personas and journey maps, develop wireframes and prototypes, conduct usability testing, iterate based on feedback, and deliver final designs with comprehensive design systems and documentation.",
+          mcqOptions: ["Start with design", "Research-driven process", "Copy existing designs", "Quick sketches"],
+          correctAnswer: 1
+        },
+        {
+          question: "How do you handle feedback from stakeholders and users?",
+          answerExample: "I actively seek feedback through user testing, stakeholder reviews, and design critiques. I document feedback systematically, prioritize based on user impact, iterate designs accordingly, and maintain open communication to ensure alignment with business goals and user needs.",
+          mcqOptions: ["Ignore feedback", "Implement all feedback", "Selective iteration", "Defend original design"],
+          correctAnswer: 2
+        },
+        {
+          question: "Describe a time when you had to design for accessibility.",
+          answerExample: "I redesigned our mobile app to meet WCAG guidelines by improving color contrast, adding screen reader support, implementing keyboard navigation, ensuring touch targets were appropriately sized, and testing with users who have disabilities to validate accessibility improvements.",
+          mcqOptions: ["Ignore accessibility", "Basic compliance", "Comprehensive approach", "Only visual design"],
+          correctAnswer: 2
+        },
+        {
+          question: "How do you balance user needs with business requirements?",
+          answerExample: "I use user research to understand needs, align with business goals through stakeholder collaboration, prioritize features that serve both users and business objectives, measure success through user satisfaction and business metrics, and maintain open communication throughout the process.",
+          mcqOptions: ["Focus on users only", "Business first", "Balanced approach", "Ignore both"],
+          correctAnswer: 2
+        },
+        {
+          question: "Tell me about a project where you had to work with technical constraints.",
+          answerExample: "I designed a dashboard for a legacy system with limited API capabilities. I worked closely with developers to understand constraints, simplified the design to work within technical limitations, created clear documentation, and ensured the final design was both functional and user-friendly.",
+          mcqOptions: ["Ignore constraints", "Work within limits", "Demand changes", "Simple designs only"],
+          correctAnswer: 1
+        }
       ]
     };
 
     const roleKey = jobRole.toLowerCase().replace(/\s+/g, '-');
-    const availableQuestions = questionTemplates[roleKey as keyof typeof questionTemplates] || questionTemplates["software-engineer"];
+    const availableTemplates = questionTemplates[roleKey as keyof typeof questionTemplates] || questionTemplates["software-engineer"];
     
-    // Return random questions based on count
-    const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    // Return random questions with complete data
+    const shuffled = availableTemplates.sort(() => 0.5 - Math.random());
+    const selectedTemplates = shuffled.slice(0, count);
+    
+    const questions: string[] = [];
+    const answerExamples: {[key: number]: string} = {};
+    const mcqOptions: {[key: number]: string[]} = {};
+    const mcqCorrectAnswers: {[key: number]: number} = {};
+    const questionTypes: {[key: number]: string} = {};
+    
+    selectedTemplates.forEach((template, index) => {
+      questions.push(template.question);
+      answerExamples[index] = template.answerExample;
+      mcqOptions[index] = template.mcqOptions;
+      mcqCorrectAnswers[index] = template.correctAnswer;
+      questionTypes[index] = "text-based"; // Default to text-based, can be changed
+    });
+    
+    return {
+      questions,
+      answerExamples,
+      mcqOptions,
+      mcqCorrectAnswers,
+      questionTypes
+    };
   };
 
   const addGeneratedQuestionsToStage = async (stageId: number) => {
     // Use a default job role since we don't have job title/JD inputs in this component
     const defaultJobRole = "Software Engineer";
     
-    const questions = await generateQuestionsWithAI(defaultJobRole, 5, "mixed");
+    const result = await generateQuestionsWithAI(defaultJobRole, 5, "mixed");
     
-    if (questions.length > 0) {
+    if (result.questions.length > 0) {
       setInterviewStages(interviewStages.map(stage => 
         stage.id === stageId 
-          ? { ...stage, questions: [...stage.questions, ...questions] }
+          ? { ...stage, questions: [...stage.questions, ...result.questions] }
           : stage
       ));
       
@@ -585,14 +671,42 @@ export const InterviewProcess = () => {
       const startIndex = stage?.questions.length || 0;
       
       const newQuestionTypes: {[key: string]: string} = {};
-      questions.forEach((_, index) => {
+      const newAnswerExamples: {[key: string]: string} = {};
+      const newMcqOptions: {[key: string]: string[]} = {};
+      const newMcqCorrectAnswers: {[key: string]: number} = {};
+      
+      result.questions.forEach((_, index) => {
         const questionKey = `${stageId}-${startIndex + index}`;
-        newQuestionTypes[questionKey] = "text-based";
+        newQuestionTypes[questionKey] = result.questionTypes[index] || "text-based";
+        
+        if (result.answerExamples[index]) {
+          newAnswerExamples[questionKey] = result.answerExamples[index];
+        }
+        
+        if (result.mcqOptions[index]) {
+          newMcqOptions[questionKey] = result.mcqOptions[index];
+          newMcqCorrectAnswers[questionKey] = result.mcqCorrectAnswers[index];
+        }
       });
       
       setIndividualQuestionTypes({
         ...individualQuestionTypes,
         ...newQuestionTypes
+      });
+      
+      setAnswerExamples({
+        ...answerExamples,
+        ...newAnswerExamples
+      });
+      
+      setMcqOptions({
+        ...mcqOptions,
+        ...newMcqOptions
+      });
+      
+      setMcqCorrectAnswers({
+        ...mcqCorrectAnswers,
+        ...newMcqCorrectAnswers
       });
     }
   };
@@ -600,21 +714,50 @@ export const InterviewProcess = () => {
   const addGeneratedQuestionsToTemplate = async () => {
     if (!aiJobRole.trim()) return;
     
-    const questions = await generateQuestionsWithAI(aiJobRole, aiQuestionCount, aiQuestionType);
+    const result = await generateQuestionsWithAI(aiJobRole, aiQuestionCount, aiQuestionType);
     
-    if (questions.length > 0) {
-      setTemplateQuestions([...templateQuestions, ...questions]);
+    if (result.questions.length > 0) {
+      setTemplateQuestions([...templateQuestions, ...result.questions]);
       
       // Set question types for generated template questions
       const startIndex = templateQuestions.length;
       const newQuestionTypes: {[key: number]: string} = {};
-      questions.forEach((_, index) => {
-        newQuestionTypes[startIndex + index] = "text-based";
+      const newAnswerExamples: {[key: number]: string} = {};
+      const newMcqOptions: {[key: number]: string[]} = {};
+      const newMcqCorrectAnswers: {[key: number]: number} = {};
+      
+      result.questions.forEach((_, index) => {
+        const templateIndex = startIndex + index;
+        newQuestionTypes[templateIndex] = result.questionTypes[index] || "text-based";
+        
+        if (result.answerExamples[index]) {
+          newAnswerExamples[templateIndex] = result.answerExamples[index];
+        }
+        
+        if (result.mcqOptions[index]) {
+          newMcqOptions[templateIndex] = result.mcqOptions[index];
+          newMcqCorrectAnswers[templateIndex] = result.mcqCorrectAnswers[index];
+        }
       });
       
       setTemplateQuestionTypes({
         ...templateQuestionTypes,
         ...newQuestionTypes
+      });
+      
+      setTemplateAnswerExamples({
+        ...templateAnswerExamples,
+        ...newAnswerExamples
+      });
+      
+      setTemplateMcqOptions({
+        ...templateMcqOptions,
+        ...newMcqOptions
+      });
+      
+      setTemplateMcqCorrectAnswers({
+        ...templateMcqCorrectAnswers,
+        ...newMcqCorrectAnswers
       });
       
       setShowAiGenerator(false);
@@ -629,10 +772,23 @@ export const InterviewProcess = () => {
           <h2 className="text-2xl font-bold mb-2">Interview Rounds</h2>
           <p className="text-muted-foreground">Set up multiple interview rounds, configure AI assistance, and customize questions for each stage</p>
         </div>
-        <Button className="bg-primary text-primary-foreground">
-          <Send className="h-4 w-4 mr-2" />
-          Send Interview Invitations
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            className="hover:bg-secondary hover:text-secondary-foreground transition-all duration-200 hover:scale-105"
+            onClick={() => {
+              const previewLink = `https://winginterviewer-36-efkl4f4pd-serenechan.vercel.app/preview`;
+              window.open(previewLink, '_blank');
+            }}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview Interview
+          </Button>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-105">
+            <Send className="h-4 w-4 mr-2" />
+            Send Interview Invitations
+          </Button>
+        </div>
       </div>
 
       {/* Interview Stages */}
@@ -718,7 +874,7 @@ export const InterviewProcess = () => {
                       const interviewLink = `https://winginterviewer-36-efkl4f4pd-serenechan.vercel.app/interview/${stage.id}?minMatch=${stage.minMatchPercentage || 75}`;
                       navigator.clipboard.writeText(interviewLink);
                     }}
-                    className="text-xs h-8"
+                    className="text-xs h-8 hover:bg-secondary hover:text-secondary-foreground transition-all duration-200 hover:scale-105"
                   >
                     <Send className="h-3 w-3 mr-1" />
                     Copy Link
@@ -736,35 +892,54 @@ export const InterviewProcess = () => {
               </div>
 
             {/* All controls in a single responsive row */}
-            <div className="flex flex-wrap items-end gap-6 mb-6">
-              <div className="flex flex-col min-w-[120px]">
-                <label className="text-xs font-medium mb-1">Min Match %</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="75"
-                    value={stage.minMatchPercentage || "75"}
-                    onChange={(e) => {
-                      setInterviewStages(interviewStages.map(s => 
-                        s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
-                      ));
-                    }}
-                    className="w-16 h-7 text-xs"
+            <div className="flex flex-wrap items-end gap-6 mb-2">
+              {/* Auto-Advance, Response Type, Time Limit */}
+              <div className="flex items-center gap-6 flex-wrap">
+                {/* Auto-Advance Qualified Candidates */}
+                <div className="flex items-center gap-2 min-w-[220px]">
+                  <Switch
+                    id={`auto-trigger-${stage.id}`}
+                    checked={true}
+                    disabled={true}
+                    className="data-[state=checked]:bg-primary scale-110"
                   />
+                  <span className="text-sm font-semibold text-foreground">
+                    Auto-Advance Qualified Candidates
+                  </span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="cursor-help text-muted-foreground text-xs">?</span>
+                        <span className="cursor-help text-muted-foreground">?</span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Only candidates with a match score at or above this percentage will be invited to this round.</p>
+                        <p>This feature is always enabled for now. Manual review will be available soon.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-              </div>
-              <div className="flex flex-col min-w-[120px]">
-                <label className="text-xs font-medium mb-1">Time Limit</label>
-                <div className="flex items-center gap-2">
+                {/* Response Type */}
+                <div className="flex items-center gap-2 min-w-[180px]">
+                  <Type className={`h-3 w-3 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
+                  <Switch
+                    id={`response-type-${stage.id}`}
+                    checked={stage.assessmentMode === "voice-video"}
+                    onCheckedChange={(checked) => {
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { 
+                          ...s, 
+                          assessmentMode: checked ? "voice-video" : "text" 
+                        } : s
+                      ));
+                    }}
+                    className="data-[state=checked]:bg-primary scale-90"
+                  />
+                  <Video className={`h-3 w-3 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
+                </div>
+                {/* Time Limit (last, optional) */}
+                <div className="flex items-center gap-2 min-w-[120px]">
+                  <span className="text-xs font-medium mb-1">Time Limit</span>
                   <Switch
                     id={`time-limit-${stage.id}`}
                     checked={!!stage.timeLimit}
@@ -792,28 +967,7 @@ export const InterviewProcess = () => {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col min-w-[180px]">
-                <label className="text-xs font-medium mb-1">Response Type</label>
-                <div className="flex items-center gap-2">
-                  <Type className={`h-3 w-3 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className={`text-xs transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
-                  <Switch
-                    id={`response-type-${stage.id}`}
-                    checked={stage.assessmentMode === "voice-video"}
-                    onCheckedChange={(checked) => {
-                      setInterviewStages(interviewStages.map(s => 
-                        s.id === stage.id ? { 
-                          ...s, 
-                          assessmentMode: checked ? "voice-video" : "text" 
-                        } : s
-                      ));
-                    }}
-                    className="data-[state=checked]:bg-primary scale-90"
-                  />
-                  <Video className={`h-3 w-3 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className={`text-xs transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
-                </div>
-              </div>
+              {/* Other controls (Question Template, Interview Mode) */}
               <div className="flex flex-col min-w-[220px] flex-1">
                 <label className="text-xs font-medium mb-1">Question Template</label>
                 <Select value={stage.presetQuestions} onValueChange={(value) => {
@@ -932,7 +1086,23 @@ export const InterviewProcess = () => {
                 </Select>
               </div>
             </div>
-
+            {/* Min Match % below, with clear explanation */}
+            <div className="flex flex-col min-w-[120px] max-w-xs mb-6">
+              <label className="text-xs font-medium mb-1">Min Match %</label>
+              <Input
+                placeholder="75"
+                value={stage.minMatchPercentage || "75"}
+                onChange={(e) => {
+                  setInterviewStages(interviewStages.map(s => 
+                    s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
+                  ));
+                }}
+                className="w-16 h-7 text-xs"
+              />
+              <span className="text-xs text-muted-foreground mt-1">
+                Only candidates with a match score at or above this percentage will be invited to this round.
+              </span>
+            </div>
 
 
             {/* Questions Section */}
@@ -942,13 +1112,13 @@ export const InterviewProcess = () => {
                   <h4 className="text-md font-medium">Questions</h4>
                   {/* AI Question Generator - Only show for AI modes */}
                   {interviewModes[stage.id] !== "human-interviewer" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addGeneratedQuestionsToStage(stage.id)}
-                      disabled={isGeneratingQuestions}
-                      className="text-xs"
-                    >
+                                      <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addGeneratedQuestionsToStage(stage.id)}
+                    disabled={isGeneratingQuestions}
+                    className="text-xs hover:bg-secondary hover:text-secondary-foreground transition-all duration-200 hover:scale-105"
+                  >
                       {isGeneratingQuestions ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
@@ -996,7 +1166,7 @@ export const InterviewProcess = () => {
                   <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-4">
                     No questions added yet.
                     <div className="flex gap-3 justify-center">
-                      <Button onClick={() => addGeneratedQuestionsToStage(stage.id)} className="bg-secondary text-secondary-foreground">
+                      <Button onClick={() => addGeneratedQuestionsToStage(stage.id)} className="bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-all duration-200 hover:scale-105">
                         <Sparkles className="h-4 w-4 mr-2" />
                         Generate Questions
                       </Button>
@@ -1024,7 +1194,7 @@ export const InterviewProcess = () => {
                     <Button 
                       onClick={() => addQuestionToStage(stage.id)}
                       disabled={!question.trim()}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 font-medium"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 font-medium transition-all duration-200 hover:scale-105"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Question
@@ -1044,7 +1214,7 @@ export const InterviewProcess = () => {
       <Button 
         onClick={addInterviewStage}
         variant="outline" 
-        className="w-full h-16 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5"
+        className="w-full h-16 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 hover:scale-[1.02]"
       >
         <Plus className="h-5 w-5 mr-2" />
         Add New Interview Round
@@ -1069,23 +1239,44 @@ export const InterviewProcess = () => {
             </div>
             {/* Removed job role/description input */}
             <div className="flex items-center gap-3">
-              <Button
-                onClick={async () => {
-                  setIsGeneratingQuestions(true);
-                  try {
-                    const questions = await generateQuestionsWithAI("Software Engineer", 5, "mixed"); // Default job role
-                    if (questions.length > 0) {
-                      setTemplateQuestions(questions);
+                              <Button
+                  onClick={async () => {
+                    setIsGeneratingQuestions(true);
+                    try {
+                      const result = await generateQuestionsWithAI("Software Engineer", 5, "mixed"); // Default job role
+                      if (result.questions.length > 0) {
+                        setTemplateQuestions(result.questions);
+                        
+                        // Set template data
+                        setTemplateAnswerExamples({
+                          ...templateAnswerExamples,
+                          ...result.answerExamples
+                        });
+                        
+                        setTemplateMcqOptions({
+                          ...templateMcqOptions,
+                          ...result.mcqOptions
+                        });
+                        
+                        setTemplateMcqCorrectAnswers({
+                          ...templateMcqCorrectAnswers,
+                          ...result.mcqCorrectAnswers
+                        });
+                        
+                        setTemplateQuestionTypes({
+                          ...templateQuestionTypes,
+                          ...result.questionTypes
+                        });
+                      }
+                    } catch (err) {
+                      // Optionally show error
+                    } finally {
+                      setIsGeneratingQuestions(false);
                     }
-                  } catch (err) {
-                    // Optionally show error
-                  } finally {
-                    setIsGeneratingQuestions(false);
-                  }
-                }}
-                disabled={!newTemplateName.trim() || isGeneratingQuestions}
-                className="bg-primary text-primary-foreground"
-              >
+                  }}
+                  disabled={!newTemplateName.trim() || isGeneratingQuestions}
+                  className="bg-primary text-primary-foreground"
+                >
                 {isGeneratingQuestions ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
