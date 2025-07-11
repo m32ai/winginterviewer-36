@@ -15,7 +15,7 @@ export const InterviewProcess = () => {
   const [editingStageName, setEditingStageName] = useState<{[key: number]: boolean}>({});
   const [editStageNameText, setEditStageNameText] = useState<{[key: number]: string}>({});
   const [timeLimit, setTimeLimit] = useState("");
-  const [autoTrigger, setAutoTrigger] = useState(false);
+  const [autoTrigger, setAutoTrigger] = useState(true);
   const [assessmentMode, setAssessmentMode] = useState("text");
   const [presetQuestions, setPresetQuestions] = useState("executive-assistant");
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -164,7 +164,7 @@ export const InterviewProcess = () => {
       questions: [] as string[],
       assessmentMode: "text",
       timeLimit: "",
-      autoTrigger: false,
+      autoTrigger: true,
       presetQuestions: "executive-assistant",
       minMatchPercentage: "",
       questionType: "open-ended"
@@ -220,7 +220,7 @@ export const InterviewProcess = () => {
       questions: [] as string[],
       assessmentMode: "text",
       timeLimit: "",
-      autoTrigger: false,
+      autoTrigger: true,
       presetQuestions: "executive-assistant",
       minMatchPercentage: "",
       questionType: "open-ended"
@@ -462,8 +462,8 @@ export const InterviewProcess = () => {
                           </Tooltip>
                         </TooltipProvider>
                         <div className="flex items-center gap-2">
-                          <Type className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Text</span>
+                          <Type className={`h-4 w-4 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className={`text-sm transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
                         </div>
                         <Switch
                           id={`response-type-${stage.id}`}
@@ -476,10 +476,11 @@ export const InterviewProcess = () => {
                               } : s
                             ));
                           }}
+                          className="data-[state=checked]:bg-primary"
                         />
                         <div className="flex items-center gap-2">
-                          <Video className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Voice + Video</span>
+                          <Video className={`h-4 w-4 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className={`text-sm transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
                         </div>
                       </div>
 
@@ -685,9 +686,9 @@ export const InterviewProcess = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 mb-6">
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium mb-2 block">Auto-Trigger Next Round</label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/30">
                   <Switch 
                     id={`auto-trigger-${stage.id}`}
                     checked={stage.autoTrigger}
@@ -696,10 +697,21 @@ export const InterviewProcess = () => {
                         s.id === stage.id ? { ...s, autoTrigger: checked } : s
                       ));
                     }}
+                    className="data-[state=checked]:bg-primary"
                   />
-                  <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm">
-                    Automatically proceed to next round if candidate meets minimum score
-                  </Label>
+                  <div className="flex-1">
+                    <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-medium cursor-pointer">
+                      {stage.autoTrigger ? "Enabled" : "Disabled"} - Automatically proceed to next round
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stage.autoTrigger 
+                        ? "Candidates meeting the minimum score will automatically advance" 
+                        : "Manual review required before advancing candidates"}
+                    </p>
+                  </div>
+                  <Badge variant={stage.autoTrigger ? "default" : "secondary"} className="ml-2">
+                    {stage.autoTrigger ? "ON" : "OFF"}
+                  </Badge>
                 </div>
               </div>
             </div>
