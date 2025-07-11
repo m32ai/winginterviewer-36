@@ -854,6 +854,30 @@ export const InterviewProcess = () => {
                               </Tooltip>
                             </TooltipProvider>
                           </div>
+                          {/* Min Match % on the right side */}
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className="text-xs font-medium">Min Match %</span>
+                            <Input
+                              placeholder="75"
+                              value={stage.minMatchPercentage || "75"}
+                              onChange={(e) => {
+                                setInterviewStages(interviewStages.map(s => 
+                                  s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
+                                ));
+                              }}
+                              className="w-16 h-7 text-xs"
+                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help text-muted-foreground text-xs">?</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Only candidates with a match score at or above this percentage will be invited to this round.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -947,11 +971,15 @@ export const InterviewProcess = () => {
                         const newAnswerExamples: {[key: string]: string} = {};
                         const newMcqOptions: {[key: string]: string[]} = {};
                         const newMcqCorrectAnswers: {[key: string]: number} = {};
+                        const newQuestionTypes: {[key: string]: string} = {};
                         const newQuestionType = templateQuestions.some(tq => tq.mcqOptions) ? "mixed" : "open-ended";
                         
                         templateQuestions.forEach((tq, index) => {
                           newQuestions.push(tq.question);
                           const questionKey = `${stage.id}-${index}`;
+                          
+                          // Set question type
+                          newQuestionTypes[questionKey] = tq.mcqOptions ? "mcq" : "text-based";
                           
                           if (tq.goodAnswer) {
                             newAnswerExamples[questionKey] = tq.goodAnswer;
@@ -966,6 +994,7 @@ export const InterviewProcess = () => {
                         setAnswerExamples({...answerExamples, ...newAnswerExamples});
                         setMcqOptions({...mcqOptions, ...newMcqOptions});
                         setMcqCorrectAnswers({...mcqCorrectAnswers, ...newMcqCorrectAnswers});
+                        setIndividualQuestionTypes({...individualQuestionTypes, ...newQuestionTypes});
                         
                         setInterviewStages(interviewStages.map(s => 
                           s.id === stage.id ? { 
@@ -1054,23 +1083,6 @@ export const InterviewProcess = () => {
                 </div>
               </div>
             </div>
-            {/* Min Match % below, with clear explanation */}
-            <div className="flex flex-col min-w-[120px] mb-6">
-              <label className="text-xs font-medium mb-1">Min Match %</label>
-              <Input
-                placeholder="75"
-                value={stage.minMatchPercentage || "75"}
-                onChange={(e) => {
-                  setInterviewStages(interviewStages.map(s => 
-                    s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
-                  ));
-                }}
-                className="w-16 h-7 text-xs"
-              />
-              <span className="text-xs text-muted-foreground mt-1">
-                Only candidates with a match score at or above this percentage will be invited to this round.
-              </span>
-            </div>
 
 
             {/* Questions Section */}
@@ -1111,7 +1123,16 @@ export const InterviewProcess = () => {
                       stageId={stage.id}
                       isEditing={editingQuestion[`${stage.id}-${questionIndex}`]}
                       editQuestionText={editQuestionText[`${stage.id}-${questionIndex}`]}
-                      onEditChange={() => startEditingQuestion(stage.id, questionIndex, q)}
+                      onEditChange={(value) => {
+                        if (typeof value === 'string') {
+                          setEditQuestionText({
+                            ...editQuestionText,
+                            [`${stage.id}-${questionIndex}`]: value
+                          });
+                        } else {
+                          startEditingQuestion(stage.id, questionIndex, q);
+                        }
+                      }}
                       onEditSave={() => saveEditedQuestion(stage.id, questionIndex)}
                       onEditCancel={() => cancelEditingQuestion(stage.id, questionIndex)}
                       onDelete={() => removeQuestionFromStage(stage.id, questionIndex)}
@@ -1122,6 +1143,7 @@ export const InterviewProcess = () => {
                       showAnswerExample={showAnswerExample}
                       setShowAnswerExample={setShowAnswerExample}
                       saveAnswerExample={saveAnswerExample}
+                      setAnswerExamples={setAnswerExamples}
                       mcqOptions={mcqOptions}
                       updateMcqOption={updateMcqOption}
                       mcqCorrectAnswers={mcqCorrectAnswers}
