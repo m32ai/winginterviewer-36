@@ -684,24 +684,25 @@ export const InterviewProcess = () => {
                       <div className="flex items-center gap-6 ml-6">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              </div>
-                              <span className="text-sm font-semibold text-foreground">
-                                Auto-Advance Qualified Candidates
-                              </span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="cursor-help text-muted-foreground">?</span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Qualified candidates automatically proceed to the next round without manual review. Ensures smooth candidate experience.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
+                            <Switch
+                              id={`auto-trigger-${stage.id}`}
+                              checked={true}
+                              disabled={true}
+                              className="data-[state=checked]:bg-primary scale-110"
+                            />
+                            <span className="text-sm font-semibold text-foreground">
+                              Auto-Advance Qualified Candidates
+                            </span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help text-muted-foreground">?</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>This feature is always enabled for now. Manual review will be available soon.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
                       </div>
@@ -739,16 +740,6 @@ export const InterviewProcess = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block flex items-center gap-2">
                   Min Match %
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-help text-muted-foreground">?</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Minimum match score required for a candidate to automatically receive this interview invite and progress to subsequent rounds.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </label>
                 <Input
                   placeholder="75"
@@ -760,6 +751,61 @@ export const InterviewProcess = () => {
                   }}
                   className="w-24 h-8 text-sm"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only candidates with a match score at or above this percentage will be invited to this round.
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Time Limit</label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id={`time-limit-${stage.id}`}
+                    checked={!!stage.timeLimit}
+                    onCheckedChange={(checked) => {
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { ...s, timeLimit: checked ? (s.timeLimit || "45") : "" } : s
+                      ));
+                    }}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  {stage.timeLimit && (
+                    <>
+                      <Input
+                        placeholder="45"
+                        value={stage.timeLimit}
+                        onChange={(e) => {
+                          setInterviewStages(interviewStages.map(s => 
+                            s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
+                          ));
+                        }}
+                        className="w-16 h-7 text-sm"
+                      />
+                      <span className="text-sm text-muted-foreground">min</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Response Type</label>
+                <div className="flex items-center gap-2">
+                  <Type className={`h-4 w-4 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-sm transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
+                  <Switch
+                    id={`response-type-${stage.id}`}
+                    checked={stage.assessmentMode === "voice-video"}
+                    onCheckedChange={(checked) => {
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { 
+                          ...s, 
+                          assessmentMode: checked ? "voice-video" : "text" 
+                        } : s
+                      ));
+                    }}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <Video className={`h-4 w-4 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-sm transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Question Template</label>
