@@ -735,28 +735,35 @@ export const InterviewProcess = () => {
                 </div>
               </div>
 
-            {/* Only one grid for Min Match %, Question Template, and Interview Mode */}
-            <div className="grid grid-cols-3 gap-6 mb-6">
-              <div>
-                <label className="text-sm font-medium mb-2 block flex items-center gap-2">
-                  Min Match %
-                </label>
-                <Input
-                  placeholder="75"
-                  value={stage.minMatchPercentage || "75"}
-                  onChange={(e) => {
-                    setInterviewStages(interviewStages.map(s => 
-                      s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
-                    ));
-                  }}
-                  className="w-24 h-8 text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Only candidates with a match score at or above this percentage will be invited to this round.
-                </p>
+            {/* Compact controls row */}
+            <div className="flex flex-wrap items-end gap-6 mb-4">
+              <div className="flex flex-col min-w-[120px]">
+                <label className="text-xs font-medium mb-1">Min Match %</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="75"
+                    value={stage.minMatchPercentage || "75"}
+                    onChange={(e) => {
+                      setInterviewStages(interviewStages.map(s => 
+                        s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
+                      ));
+                    }}
+                    className="w-16 h-7 text-xs"
+                  />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help text-muted-foreground text-xs">?</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Only candidates with a match score at or above this percentage will be invited to this round.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Time Limit</label>
+              <div className="flex flex-col min-w-[120px]">
+                <label className="text-xs font-medium mb-1">Time Limit</label>
                 <div className="flex items-center gap-2">
                   <Switch
                     id={`time-limit-${stage.id}`}
@@ -766,7 +773,7 @@ export const InterviewProcess = () => {
                         s.id === stage.id ? { ...s, timeLimit: checked ? (s.timeLimit || "45") : "" } : s
                       ));
                     }}
-                    className="data-[state=checked]:bg-primary"
+                    className="data-[state=checked]:bg-primary scale-90"
                   />
                   {stage.timeLimit && (
                     <>
@@ -778,18 +785,18 @@ export const InterviewProcess = () => {
                             s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
                           ));
                         }}
-                        className="w-16 h-7 text-sm"
+                        className="w-12 h-7 text-xs"
                       />
-                      <span className="text-sm text-muted-foreground">min</span>
+                      <span className="text-xs text-muted-foreground">min</span>
                     </>
                   )}
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Response Type</label>
+              <div className="flex flex-col min-w-[180px]">
+                <label className="text-xs font-medium mb-1">Response Type</label>
                 <div className="flex items-center gap-2">
-                  <Type className={`h-4 w-4 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className={`text-sm transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
+                  <Type className={`h-3 w-3 transition-colors ${stage.assessmentMode === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs transition-colors ${stage.assessmentMode === "text" ? "text-primary font-medium" : "text-muted-foreground"}`}>Text</span>
                   <Switch
                     id={`response-type-${stage.id}`}
                     checked={stage.assessmentMode === "voice-video"}
@@ -801,148 +808,11 @@ export const InterviewProcess = () => {
                         } : s
                       ));
                     }}
-                    className="data-[state=checked]:bg-primary"
+                    className="data-[state=checked]:bg-primary scale-90"
                   />
-                  <Video className={`h-4 w-4 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className={`text-sm transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
+                  <Video className={`h-3 w-3 transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
                 </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Question Template</label>
-                <Select value={stage.presetQuestions} onValueChange={(value) => {
-                  if (value === "create-new") {
-                    setIsCreatingTemplate(true);
-                  } else {
-                    // Replace questions with template questions
-                    const templateQuestions = questionTemplates[value as keyof typeof questionTemplates];
-                    if (templateQuestions) {
-                      const newQuestions: string[] = [];
-                      const newAnswerExamples: {[key: string]: string} = {};
-                      const newMcqOptions: {[key: string]: string[]} = {};
-                      const newMcqCorrectAnswers: {[key: string]: number} = {};
-                      const newQuestionType = templateQuestions.some(tq => tq.mcqOptions) ? "mixed" : "open-ended";
-                      
-                      templateQuestions.forEach((tq, index) => {
-                        newQuestions.push(tq.question);
-                        const questionKey = `${stage.id}-${index}`;
-                        
-                        if (tq.goodAnswer) {
-                          newAnswerExamples[questionKey] = tq.goodAnswer;
-                        }
-                        
-                        if (tq.mcqOptions) {
-                          newMcqOptions[questionKey] = tq.mcqOptions.options;
-                          newMcqCorrectAnswers[questionKey] = tq.mcqOptions.correctAnswer;
-                        }
-                      });
-                      
-                      setAnswerExamples({...answerExamples, ...newAnswerExamples});
-                      setMcqOptions({...mcqOptions, ...newMcqOptions});
-                      setMcqCorrectAnswers({...mcqCorrectAnswers, ...newMcqCorrectAnswers});
-                      
-                      setInterviewStages(interviewStages.map(s => 
-                        s.id === stage.id ? { 
-                          ...s, 
-                          presetQuestions: value,
-                          questions: newQuestions,
-                          questionType: newQuestionType
-                        } : s
-                      ));
-                    } else {
-                      setInterviewStages(interviewStages.map(s => 
-                        s.id === stage.id ? { ...s, presetQuestions: value } : s
-                      ));
-                    }
-                  }
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a question template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="executive-assistant">Executive Assistant Template</SelectItem>
-                    <SelectItem value="ux-researcher">UX Researcher Template</SelectItem>
-                    <SelectItem value="product-manager">Product Manager Template</SelectItem>
-                    <SelectItem value="sdr">SDR (Sales Development Representative) Template</SelectItem>
-                    {Object.entries(customTemplates).map(([key, name]) => (
-                      <SelectItem key={key} value={key}>{name} (Custom)</SelectItem>
-                    ))}
-                    <SelectItem value="create-new" className="text-primary">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Custom Template
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Pre-built question sets for specific roles
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Interview Mode</label>
-                <Select 
-                  value={interviewModes[stage.id] || "ai-fixed"}
-                  onValueChange={(value) => {
-                    setInterviewModes({
-                      ...interviewModes,
-                      [stage.id]: value
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai-fixed">
-                      <div className="flex flex-col">
-                        <span className="font-medium">AI / Fixed Questions</span>
-                        <span className="text-xs text-muted-foreground">Pre-defined questions for consistency across candidates</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="ai-freeflow">
-                      <div className="flex flex-col">
-                        <span className="font-medium">AI / Free Flow</span>
-                        <span className="text-xs text-muted-foreground">Dynamic AI interview with follow-up questions</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="ai-hybrid">
-                      <div className="flex flex-col">
-                        <span className="font-medium">AI / Fixed + Free Flow</span>
-                        <span className="text-xs text-muted-foreground">Starts with fixed questions, then AI follow-ups</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="human-interviewer">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Human Interviewer</span>
-                        <span className="text-xs text-muted-foreground">Live human-conducted interview session</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="practical-assessment">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Practical Assessment / Test</span>
-                        <span className="text-xs text-muted-foreground">Coding challenges, skill tests, hands-on tasks</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {/* Scheduling Link for Human Interviewer */}
-                {interviewModes[stage.id] === "human-interviewer" && (
-                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-blue-900">Scheduling Link</span>
-                    </div>
-                    <Input
-                      placeholder="https://calendly.com/your-company/interview"
-                      value={schedulingLinks[stage.id] || ""}
-                      onChange={(e) => setSchedulingLinks({
-                        ...schedulingLinks,
-                        [stage.id]: e.target.value
-                      })}
-                      className="text-sm"
-                    />
-                    <p className="text-xs text-blue-700 mt-1">
-                      Add your Calendly, Acuity, or other scheduling link for candidates to book interviews
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
