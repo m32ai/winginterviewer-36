@@ -804,6 +804,31 @@ export const InterviewProcess = () => {
             {/* Only one grid for Min Match %, Question Template, and Interview Mode */}
             <div className="grid grid-cols-3 gap-6 mb-6">
               <div>
+                <label className="text-sm font-medium mb-2 block flex items-center gap-2">
+                  Min Match %
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help text-muted-foreground">?</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Minimum match score required for a candidate to automatically receive this interview invite and progress to subsequent rounds.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </label>
+                <Input
+                  placeholder="75"
+                  value={stage.minMatchPercentage || "75"}
+                  onChange={(e) => {
+                    setInterviewStages(interviewStages.map(s => 
+                      s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
+                    ));
+                  }}
+                  className="w-24 h-8 text-sm"
+                />
+              </div>
+              <div>
                 <label className="text-sm font-medium mb-2 block">Question Template</label>
                 <Select value={stage.presetQuestions} onValueChange={(value) => {
                   if (value === "create-new") {
@@ -939,6 +964,32 @@ export const InterviewProcess = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Share Interview Link Section */}
+            <div className="mb-6 p-4 bg-muted/20 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Interview Invite Link</h4>
+                  <p className="text-xs text-muted-foreground">Share this link with candidates to start their interview</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const interviewLink = `https://winginterviewer-36-oq4ukw194-serenechan.vercel.app/interview/${stage.id}?minMatch=${stage.minMatchPercentage || 75}`;
+                    navigator.clipboard.writeText(interviewLink);
+                    // You could add a toast notification here
+                  }}
+                  className="text-xs"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Copy Link
+                </Button>
+              </div>
+              <div className="mt-2 p-2 bg-background rounded border text-xs font-mono text-muted-foreground break-all">
+                https://winginterviewer-36-oq4ukw194-serenechan.vercel.app/interview/{stage.id}?minMatch={stage.minMatchPercentage || 75}
               </div>
             </div>
 
