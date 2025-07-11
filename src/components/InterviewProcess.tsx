@@ -163,10 +163,10 @@ export const InterviewProcess = () => {
       name: "Initial screening", 
       questions: [] as string[],
       assessmentMode: "text",
-      timeLimit: "",
-      autoTrigger: true,
-      presetQuestions: "executive-assistant",
-      minMatchPercentage: "",
+                      timeLimit: "45",
+                      autoTrigger: true,
+                      presetQuestions: "executive-assistant",
+                      minMatchPercentage: "75",
       questionType: "open-ended"
     }
   ]);
@@ -219,10 +219,10 @@ export const InterviewProcess = () => {
       name: `Round ${interviewStages.length + 1}`,
       questions: [] as string[],
       assessmentMode: "text",
-      timeLimit: "",
+      timeLimit: "45",
       autoTrigger: true,
       presetQuestions: "executive-assistant",
-      minMatchPercentage: "",
+      minMatchPercentage: "75",
       questionType: "open-ended"
     };
     setInterviewStages([...interviewStages, newStage]);
@@ -490,8 +490,8 @@ export const InterviewProcess = () => {
                             <div className="flex items-center gap-2 cursor-help">
                               <Clock className="h-4 w-4 text-muted-foreground" />
                               <Input
-                                placeholder="30 min"
-                                value={stage.timeLimit}
+                                placeholder="45 min"
+                                value={stage.timeLimit || "45"}
                                 onChange={(e) => {
                                   setInterviewStages(interviewStages.map(s => 
                                     s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
@@ -514,7 +514,7 @@ export const InterviewProcess = () => {
                               <span className="text-sm font-medium">Min Match %:</span>
                               <Input
                                 placeholder="75"
-                                value={stage.minMatchPercentage || ""}
+                                value={stage.minMatchPercentage || "75"}
                                 onChange={(e) => {
                                   setInterviewStages(interviewStages.map(s => 
                                     s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
@@ -685,34 +685,42 @@ export const InterviewProcess = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 mb-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium mb-2 block">Auto-Trigger Next Round</label>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/30">
-                  <Switch 
-                    id={`auto-trigger-${stage.id}`}
-                    checked={stage.autoTrigger}
-                    onCheckedChange={(checked) => {
-                      setInterviewStages(interviewStages.map(s => 
-                        s.id === stage.id ? { ...s, autoTrigger: checked } : s
-                      ));
-                    }}
-                    className="data-[state=checked]:bg-primary"
-                  />
+            <div className="mb-6">
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Switch 
+                      id={`auto-trigger-${stage.id}`}
+                      checked={stage.autoTrigger}
+                      onCheckedChange={(checked) => {
+                        setInterviewStages(interviewStages.map(s => 
+                          s.id === stage.id ? { ...s, autoTrigger: checked } : s
+                        ));
+                      }}
+                      className="data-[state=checked]:bg-primary scale-110"
+                    />
+                  </div>
                   <div className="flex-1">
-                    <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-medium cursor-pointer">
-                      {stage.autoTrigger ? "Enabled" : "Disabled"} - Automatically proceed to next round
+                    <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-semibold cursor-pointer text-foreground">
+                      Auto-Advance Candidates
                     </Label>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {stage.autoTrigger 
-                        ? "Candidates meeting the minimum score will automatically advance" 
-                        : "Manual review required before advancing candidates"}
+                        ? "Candidates meeting the minimum score will automatically proceed to the next round" 
+                        : "Manual review required before advancing candidates to the next round"}
                     </p>
                   </div>
-                  <Badge variant={stage.autoTrigger ? "default" : "secondary"} className="ml-2">
-                    {stage.autoTrigger ? "ON" : "OFF"}
-                  </Badge>
                 </div>
+                <Badge 
+                  variant={stage.autoTrigger ? "default" : "secondary"} 
+                  className={`ml-4 px-3 py-1 font-medium ${
+                    stage.autoTrigger 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {stage.autoTrigger ? "ENABLED" : "DISABLED"}
+                </Badge>
               </div>
             </div>
 
@@ -786,15 +794,15 @@ export const InterviewProcess = () => {
                                 </div>
                               )}
                               
-                              {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && (
+                              {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && !answerExamples[questionKey] && (
                                 <div className="flex gap-2">
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-xs h-auto p-1"
+                                    className="text-xs h-auto p-1 text-muted-foreground hover:text-primary"
                                     onClick={() => setShowAnswerExample({...showAnswerExample, [questionKey]: true})}
                                   >
-                                    {answerExamples[questionKey] ? 'Edit Good Answer Example' : 'Add Good Answer Example'}
+                                    + Add Example Answer
                                   </Button>
                                 </div>
                               )}
@@ -838,21 +846,24 @@ export const InterviewProcess = () => {
                               </div>
                             )}
                             
-                            {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && answerExamples[questionKey] && !showAnswerExample[questionKey] && (
-                              <div className="mt-2 p-2 bg-accent/20 border border-primary/20 rounded-md">
-                                <div className="text-xs font-medium text-muted-foreground mb-1">Good Answer Example:</div>
-                                <p className="text-xs text-foreground">{answerExamples[questionKey]}</p>
-                                 <Button 
-                                   size="sm" 
-                                   variant="ghost"
-                                   className="text-xs h-auto p-1 mt-1"
-                                   onClick={() => setShowAnswerExample({...showAnswerExample, [questionKey]: true})}
-                                 >
-                                   <Edit className="h-3 w-3 mr-1" />
-                                   Edit
-                                 </Button>
-                              </div>
-                            )}
+            {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && answerExamples[questionKey] && !showAnswerExample[questionKey] && (
+              <div className="mt-2 p-3 bg-accent/10 border border-primary/10 rounded-lg">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-primary mb-1">Example Answer:</div>
+                    <p className="text-xs text-foreground leading-relaxed">{answerExamples[questionKey]}</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="text-xs h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                    onClick={() => setShowAnswerExample({...showAnswerExample, [questionKey]: true})}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
                             {(stage.questionType === "mcq" || stage.questionType === "mixed") && !isEditing && (
                               <div className="space-y-2">
