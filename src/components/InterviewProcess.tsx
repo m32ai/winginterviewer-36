@@ -735,8 +735,8 @@ export const InterviewProcess = () => {
                 </div>
               </div>
 
-            {/* Compact controls row */}
-            <div className="flex flex-wrap items-end gap-6 mb-4">
+            {/* All controls in a single responsive row */}
+            <div className="flex flex-wrap items-end gap-6 mb-6">
               <div className="flex flex-col min-w-[120px]">
                 <label className="text-xs font-medium mb-1">Min Match %</label>
                 <div className="flex items-center gap-2">
@@ -814,12 +814,8 @@ export const InterviewProcess = () => {
                   <span className={`text-xs transition-colors ${stage.assessmentMode === "voice-video" ? "text-primary font-medium" : "text-muted-foreground"}`}>Voice + Video</span>
                 </div>
               </div>
-            </div>
-
-            {/* Question Template and Interview Mode row */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Question Template</label>
+              <div className="flex flex-col min-w-[220px] flex-1">
+                <label className="text-xs font-medium mb-1">Question Template</label>
                 <Select value={stage.presetQuestions} onValueChange={(value) => {
                   if (value === "create-new") {
                     setIsCreatingTemplate(true);
@@ -887,8 +883,8 @@ export const InterviewProcess = () => {
                   Pre-built question sets for specific roles
                 </p>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Interview Mode</label>
+              <div className="flex flex-col min-w-[220px] flex-1">
+                <label className="text-xs font-medium mb-1">Interview Mode</label>
                 <Select 
                   value={interviewModes[stage.id] || "ai-fixed"}
                   onValueChange={(value) => {
