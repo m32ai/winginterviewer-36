@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { GripVertical, Trash2, Plus, Send, Pen, Clock, Edit, Type, Video } from "lucide-react";
+import { GripVertical, Trash2, Plus, Send, Pen, Clock, Edit, Type, Video, Sparkles } from "lucide-react";
+import { QuestionCard } from './QuestionCard';
 
 export const InterviewProcess = () => {
   const [question, setQuestion] = useState("");
@@ -15,8 +16,9 @@ export const InterviewProcess = () => {
   const [editingStageName, setEditingStageName] = useState<{[key: number]: boolean}>({});
   const [editStageNameText, setEditStageNameText] = useState<{[key: number]: string}>({});
   const [timeLimit, setTimeLimit] = useState("");
+  const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
   const [autoTrigger, setAutoTrigger] = useState(true);
-  const [assessmentMode, setAssessmentMode] = useState("text");
+  const [assessmentMode, setAssessmentMode] = useState("voice-video");
   const [presetQuestions, setPresetQuestions] = useState("executive-assistant");
   const [newTemplateName, setNewTemplateName] = useState("");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
@@ -157,16 +159,37 @@ export const InterviewProcess = () => {
   const [showMcqConfig, setShowMcqConfig] = useState<{[key: string]: boolean}>({});
   const [editingQuestion, setEditingQuestion] = useState<{[key: string]: boolean}>({});
   const [editQuestionText, setEditQuestionText] = useState<{[key: string]: string}>({});
+  const [individualQuestionTypes, setIndividualQuestionTypes] = useState<{[key: string]: string}>({});
+  
+  // Template creation specific state
+  const [templateQuestionTypes, setTemplateQuestionTypes] = useState<{[key: number]: string}>({});
+  const [templateMcqOptions, setTemplateMcqOptions] = useState<{[key: number]: string[]}>({});
+  const [templateMcqCorrectAnswers, setTemplateMcqCorrectAnswers] = useState<{[key: number]: number}>({});
+  const [templateShowMcqConfig, setTemplateShowMcqConfig] = useState<{[key: number]: boolean}>({});
+  const [templateAnswerExamples, setTemplateAnswerExamples] = useState<{[key: number]: string}>({});
+  const [templateShowAnswerExample, setTemplateShowAnswerExample] = useState<{[key: number]: boolean}>({});
+  
+  // AI Question Generation State
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [aiJobRole, setAiJobRole] = useState("");
+  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [aiQuestionType, setAiQuestionType] = useState("mixed");
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
+  
+  // Interview Mode and Scheduling State
+  const [interviewModes, setInterviewModes] = useState<{[key: number]: string}>({});
+  const [schedulingLinks, setSchedulingLinks] = useState<{[key: number]: string}>({});
+  
   const [interviewStages, setInterviewStages] = useState([
     { 
       id: 1, 
-      name: "Initial screening", 
+      name: "Screening Interview", 
       questions: [] as string[],
-      assessmentMode: "text",
-                      timeLimit: "45",
-                      autoTrigger: true,
-                      presetQuestions: "executive-assistant",
-                      minMatchPercentage: "75",
+      assessmentMode: "voice-video",
+      timeLimit: "45",
+      autoTrigger: true,
+      presetQuestions: "executive-assistant",
+      minMatchPercentage: "75",
       questionType: "open-ended"
     }
   ]);
@@ -196,6 +219,27 @@ export const InterviewProcess = () => {
   const removeTemplateQuestion = (index: number) => {
     if (templateQuestions.length > 1) {
       setTemplateQuestions(templateQuestions.filter((_, i) => i !== index));
+      // Clean up related state
+      const newTemplateQuestionTypes = { ...templateQuestionTypes };
+      const newTemplateMcqOptions = { ...templateMcqOptions };
+      const newTemplateMcqCorrectAnswers = { ...templateMcqCorrectAnswers };
+      const newTemplateShowMcqConfig = { ...templateShowMcqConfig };
+      const newTemplateAnswerExamples = { ...templateAnswerExamples };
+      const newTemplateShowAnswerExample = { ...templateShowAnswerExample };
+      
+      delete newTemplateQuestionTypes[index];
+      delete newTemplateMcqOptions[index];
+      delete newTemplateMcqCorrectAnswers[index];
+      delete newTemplateShowMcqConfig[index];
+      delete newTemplateAnswerExamples[index];
+      delete newTemplateShowAnswerExample[index];
+      
+      setTemplateQuestionTypes(newTemplateQuestionTypes);
+      setTemplateMcqOptions(newTemplateMcqOptions);
+      setTemplateMcqCorrectAnswers(newTemplateMcqCorrectAnswers);
+      setTemplateShowMcqConfig(newTemplateShowMcqConfig);
+      setTemplateAnswerExamples(newTemplateAnswerExamples);
+      setTemplateShowAnswerExample(newTemplateShowAnswerExample);
     }
   };
 
@@ -210,15 +254,55 @@ export const InterviewProcess = () => {
       setIsCreatingTemplate(false);
       setNewTemplateName("");
       setTemplateQuestions([""]);
+      // Reset template-specific state
+      setTemplateQuestionTypes({});
+      setTemplateMcqOptions({});
+      setTemplateMcqCorrectAnswers({});
+      setTemplateShowMcqConfig({});
+      setTemplateAnswerExamples({});
+      setTemplateShowAnswerExample({});
     }
   };
 
+  // Template MCQ helper functions
+  const updateTemplateMcqOption = (questionIndex: number, optionIndex: number, value: string) => {
+    const currentOptions = templateMcqOptions[questionIndex] || ['', '', '', ''];
+    const newOptions = [...currentOptions];
+    newOptions[optionIndex] = value;
+    setTemplateMcqOptions({
+      ...templateMcqOptions,
+      [questionIndex]: newOptions
+    });
+  };
+
+  const toggleTemplateMcqConfig = (questionIndex: number) => {
+    setTemplateShowMcqConfig({
+      ...templateShowMcqConfig,
+      [questionIndex]: !templateShowMcqConfig[questionIndex]
+    });
+  };
+
+  const setTemplateCorrectAnswer = (questionIndex: number, optionIndex: number) => {
+    setTemplateMcqCorrectAnswers({
+      ...templateMcqCorrectAnswers,
+      [questionIndex]: optionIndex
+    });
+  };
+
+  const updateTemplateQuestionType = (questionIndex: number, questionType: string) => {
+    setTemplateQuestionTypes({
+      ...templateQuestionTypes,
+      [questionIndex]: questionType
+    });
+  };
+
   const addInterviewStage = () => {
+    const stageNames = ["Technical Interview", "Behavioral Interview", "Final Interview", "Case Study", "Presentation"];
     const newStage = {
       id: interviewStages.length + 1,
-      name: `Round ${interviewStages.length + 1}`,
+      name: stageNames[interviewStages.length] || `Interview Round ${interviewStages.length + 1}`,
       questions: [] as string[],
-      assessmentMode: "text",
+      assessmentMode: "voice-video",
       timeLimit: "45",
       autoTrigger: true,
       presetQuestions: "executive-assistant",
@@ -242,11 +326,21 @@ export const InterviewProcess = () => {
 
   const addQuestionToStage = (stageId: number) => {
     if (question.trim()) {
+      const newQuestionIndex = interviewStages.find(s => s.id === stageId)?.questions.length || 0;
+      const questionKey = `${stageId}-${newQuestionIndex}`;
+      
       setInterviewStages(interviewStages.map(stage => 
         stage.id === stageId 
           ? { ...stage, questions: [...stage.questions, question] }
           : stage
       ));
+      
+      // Set default question type to text-based
+      setIndividualQuestionTypes({
+        ...individualQuestionTypes,
+        [questionKey]: "text-based"
+      });
+      
       setQuestion("");
     }
   };
@@ -392,6 +486,142 @@ export const InterviewProcess = () => {
     });
   };
 
+  // AI Question Generation Functions
+  const generateQuestionsWithAI = async (jobRole: string, count: number, questionType: string) => {
+    setIsGeneratingQuestions(true);
+    
+    try {
+      // Simulate AI API call with realistic questions
+      const questions = await simulateAIQuestionGeneration(jobRole, count, questionType);
+      return questions;
+    } catch (error) {
+      console.error('Error generating questions:', error);
+      return [];
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
+
+  const simulateAIQuestionGeneration = async (jobRole: string, count: number, questionType: string): Promise<string[]> => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const questionTemplates = {
+      "software-engineer": [
+        "Describe a challenging technical problem you solved and the approach you took.",
+        "How do you stay updated with the latest programming languages and frameworks?",
+        "Walk me through your experience with code reviews and best practices.",
+        "Explain a time when you had to optimize performance in a critical system.",
+        "How do you handle conflicting requirements from different stakeholders?",
+        "Describe your experience with testing methodologies and quality assurance.",
+        "How do you approach debugging complex issues in production?",
+        "Tell me about a project where you had to learn a new technology quickly."
+      ],
+      "product-manager": [
+        "How do you prioritize features when resources are limited?",
+        "Describe a time when you had to make a difficult product decision.",
+        "How do you gather and validate user requirements?",
+        "Walk me through your experience with agile methodologies.",
+        "How do you handle feedback from multiple stakeholders?",
+        "Describe a successful product launch you were involved in.",
+        "How do you measure product success and iterate based on data?",
+        "Tell me about a time when you had to pivot a product strategy."
+      ],
+      "ux-designer": [
+        "Walk me through your design process from research to final deliverables.",
+        "How do you handle feedback from stakeholders and users?",
+        "Describe a time when you had to design for accessibility.",
+        "How do you balance user needs with business requirements?",
+        "Tell me about a project where you had to work with technical constraints.",
+        "How do you conduct user research and translate insights into design?",
+        "Describe a time when you had to defend your design decisions.",
+        "How do you stay updated with design trends and best practices?"
+      ],
+      "data-scientist": [
+        "Describe a complex data analysis project you worked on.",
+        "How do you handle missing or inconsistent data?",
+        "Walk me through your experience with machine learning models.",
+        "How do you validate your findings and ensure accuracy?",
+        "Describe a time when you had to explain technical concepts to non-technical stakeholders.",
+        "How do you stay updated with the latest data science techniques?",
+        "Tell me about a project where you had to work with large datasets.",
+        "How do you approach feature engineering and model selection?"
+      ],
+      "marketing-manager": [
+        "How do you develop and execute marketing campaigns?",
+        "Describe a successful campaign you managed and the results achieved.",
+        "How do you measure ROI and optimize marketing spend?",
+        "Walk me through your experience with digital marketing channels.",
+        "How do you handle budget constraints while achieving goals?",
+        "Describe a time when you had to pivot a marketing strategy.",
+        "How do you stay updated with marketing trends and best practices?",
+        "Tell me about a campaign that didn't perform as expected and how you handled it."
+      ]
+    };
+
+    const roleKey = jobRole.toLowerCase().replace(/\s+/g, '-');
+    const availableQuestions = questionTemplates[roleKey as keyof typeof questionTemplates] || questionTemplates["software-engineer"];
+    
+    // Return random questions based on count
+    const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
+  const addGeneratedQuestionsToStage = async (stageId: number) => {
+    // Use a default job role since we don't have job title/JD inputs in this component
+    const defaultJobRole = "Software Engineer";
+    
+    const questions = await generateQuestionsWithAI(defaultJobRole, 5, "mixed");
+    
+    if (questions.length > 0) {
+      setInterviewStages(interviewStages.map(stage => 
+        stage.id === stageId 
+          ? { ...stage, questions: [...stage.questions, ...questions] }
+          : stage
+      ));
+      
+      // Set question types for generated questions
+      const stage = interviewStages.find(s => s.id === stageId);
+      const startIndex = stage?.questions.length || 0;
+      
+      const newQuestionTypes: {[key: string]: string} = {};
+      questions.forEach((_, index) => {
+        const questionKey = `${stageId}-${startIndex + index}`;
+        newQuestionTypes[questionKey] = "text-based";
+      });
+      
+      setIndividualQuestionTypes({
+        ...individualQuestionTypes,
+        ...newQuestionTypes
+      });
+    }
+  };
+
+  const addGeneratedQuestionsToTemplate = async () => {
+    if (!aiJobRole.trim()) return;
+    
+    const questions = await generateQuestionsWithAI(aiJobRole, aiQuestionCount, aiQuestionType);
+    
+    if (questions.length > 0) {
+      setTemplateQuestions([...templateQuestions, ...questions]);
+      
+      // Set question types for generated template questions
+      const startIndex = templateQuestions.length;
+      const newQuestionTypes: {[key: number]: string} = {};
+      questions.forEach((_, index) => {
+        newQuestionTypes[startIndex + index] = "text-based";
+      });
+      
+      setTemplateQuestionTypes({
+        ...templateQuestionTypes,
+        ...newQuestionTypes
+      });
+      
+      setShowAiGenerator(false);
+      setAiJobRole("");
+    }
+  };
+
   return (
     <div className="spacing-md bg-muted/30 min-h-screen">
       <div className="flex items-center justify-between mb-8">
@@ -411,7 +641,9 @@ export const InterviewProcess = () => {
           <div className="spacing-md">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-full">
+                  <span className="text-sm font-semibold text-primary">{stageIndex + 1}</span>
+                </div>
                 <div>
                   <div className="flex items-center gap-2">
                     {editingStageName[stage.id] ? (
@@ -429,12 +661,12 @@ export const InterviewProcess = () => {
                           }
                         }}
                         onBlur={() => saveEditedStageName(stage.id)}
-                        className="text-lg font-semibold h-auto py-1 px-2 border-primary/50 focus:border-primary"
+                        className="text-xl font-semibold h-auto py-1 px-2 border-primary/50 focus:border-primary"
                         autoFocus
                       />
                     ) : (
                       <h3 
-                        className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors" 
+                        className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors" 
                         onClick={() => startEditingStageName(stage.id, stage.name)}
                       >
                         {stage.name}
@@ -488,21 +720,33 @@ export const InterviewProcess = () => {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="flex items-center gap-2 cursor-help">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <Input
-                                placeholder="45 min"
-                                value={stage.timeLimit || "45"}
-                                onChange={(e) => {
-                                  setInterviewStages(interviewStages.map(s => 
-                                    s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
-                                  ));
-                                }}
-                                className="w-20 h-8 text-sm"
+                              <Clock className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium text-muted-foreground">Time Limit:</span>
+                              <Switch
+                                id={`time-limit-${stage.id}`}
+                                checked={timeLimitEnabled}
+                                onCheckedChange={(checked) => setTimeLimitEnabled(checked)}
+                                className="data-[state=checked]:bg-primary"
                               />
+                              {timeLimitEnabled && (
+                                <>
+                                  <Input
+                                    placeholder="45"
+                                    value={stage.timeLimit || "45"}
+                                    onChange={(e) => {
+                                      setInterviewStages(interviewStages.map(s => 
+                                        s.id === stage.id ? { ...s, timeLimit: e.target.value } : s
+                                      ));
+                                    }}
+                                    className="w-16 h-7 text-sm"
+                                  />
+                                  <span className="text-sm text-muted-foreground">min</span>
+                                </>
+                              )}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Set a time limit for this interview round (optional)</p>
+                            <p>Enable and set a time limit for this interview round (optional)</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -511,25 +755,36 @@ export const InterviewProcess = () => {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="flex items-center gap-2 cursor-help">
-                              <span className="text-sm font-medium">Min Match %:</span>
-                              <Input
-                                placeholder="75"
-                                value={stage.minMatchPercentage || "75"}
-                                onChange={(e) => {
+                              <Switch
+                                id={`auto-trigger-${stage.id}`}
+                                checked={stage.autoTrigger}
+                                onCheckedChange={(checked) => {
                                   setInterviewStages(interviewStages.map(s => 
-                                    s.id === stage.id ? { ...s, minMatchPercentage: e.target.value } : s
+                                    s.id === stage.id ? { ...s, autoTrigger: checked } : s
                                   ));
                                 }}
-                                className="w-16 h-8 text-sm"
+                                className="data-[state=checked]:bg-primary scale-110"
                               />
+                              <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-semibold cursor-pointer text-foreground">
+                                Seamless Multi-Round Experience
+                              </Label>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help text-muted-foreground">?</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Qualified candidates instantly proceed to the next round in the same session. If disabled, candidates must wait for manual review before advancing.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Minimum score required to proceed to next round</p>
+                            <p>Qualified candidates instantly proceed to the next round in the same session. If disabled, candidates must wait for manual review before advancing.</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-
                     </div>
                   </div>
                   <Badge variant="outline" className="mt-1">Round {stageIndex + 1}</Badge>
@@ -546,7 +801,8 @@ export const InterviewProcess = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            {/* Only one grid for Min Match %, Question Template, and Interview Mode */}
+            <div className="grid grid-cols-3 gap-6 mb-6">
               <div>
                 <label className="text-sm font-medium mb-2 block">Question Template</label>
                 <Select value={stage.presetQuestions} onValueChange={(value) => {
@@ -616,10 +872,17 @@ export const InterviewProcess = () => {
                   Pre-built question sets for specific roles
                 </p>
               </div>
-              
               <div>
                 <label className="text-sm font-medium mb-2 block">Interview Mode</label>
-                <Select defaultValue="ai-fixed">
+                <Select 
+                  value={interviewModes[stage.id] || "ai-fixed"}
+                  onValueChange={(value) => {
+                    setInterviewModes({
+                      ...interviewModes,
+                      [stage.id]: value
+                    });
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -656,288 +919,133 @@ export const InterviewProcess = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Switch 
-                      id={`auto-trigger-${stage.id}`}
-                      checked={stage.autoTrigger}
-                      onCheckedChange={(checked) => {
-                        setInterviewStages(interviewStages.map(s => 
-                          s.id === stage.id ? { ...s, autoTrigger: checked } : s
-                        ));
-                      }}
-                      className="data-[state=checked]:bg-primary scale-110"
+                {/* Scheduling Link for Human Interviewer */}
+                {interviewModes[stage.id] === "human-interviewer" && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium text-blue-900">Scheduling Link</span>
+                    </div>
+                    <Input
+                      placeholder="https://calendly.com/your-company/interview"
+                      value={schedulingLinks[stage.id] || ""}
+                      onChange={(e) => setSchedulingLinks({
+                        ...schedulingLinks,
+                        [stage.id]: e.target.value
+                      })}
+                      className="text-sm"
                     />
-                  </div>
-                  <div className="flex-1">
-                    <Label htmlFor={`auto-trigger-${stage.id}`} className="text-sm font-semibold cursor-pointer text-foreground">
-                      Seamless Multi-Round Experience
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {stage.autoTrigger 
-                        ? "Qualified candidates instantly proceed to the next round in the same session - no waiting, no manual reviews" 
-                        : "Candidates must wait for manual review before advancing - creates delays between rounds"}
+                    <p className="text-xs text-blue-700 mt-1">
+                      Add your Calendly, Acuity, or other scheduling link for candidates to book interviews
                     </p>
                   </div>
-                </div>
-                <Badge 
-                  variant={stage.autoTrigger ? "default" : "secondary"} 
-                  className={`ml-4 px-3 py-1 font-medium ${
-                    stage.autoTrigger 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {stage.autoTrigger ? "ENABLED" : "DISABLED"}
-                </Badge>
+                )}
               </div>
             </div>
 
             {/* Questions Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-md font-medium">Questions</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Default Type:</span>
-                  <Select value={stage.questionType || "open-ended"} onValueChange={(value) => {
-                    setInterviewStages(interviewStages.map(s => 
-                      s.id === stage.id ? { ...s, questionType: value } : s
-                    ));
-                  }}>
-                    <SelectTrigger className="w-28 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open-ended">Open-ended</SelectItem>
-                      <SelectItem value="mcq">MCQ</SelectItem>
-                      <SelectItem value="mixed">Mixed</SelectItem>
-                    </SelectContent>
-                  </Select>
+            {interviewModes[stage.id] !== "human-interviewer" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-md font-medium">Questions</h4>
+                  {/* AI Question Generator - Only show for AI modes */}
+                  {interviewModes[stage.id] !== "human-interviewer" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addGeneratedQuestionsToStage(stage.id)}
+                      disabled={isGeneratingQuestions}
+                      className="text-xs"
+                    >
+                      {isGeneratingQuestions ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Questions
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
-              </div>
-              
-              {stage.questions.length > 0 ? (
-                <div className="space-y-3">
-                  {stage.questions.map((q, questionIndex) => {
-                    const questionKey = `${stage.id}-${questionIndex}`;
-                    const isEditing = editingQuestion[questionKey];
-                    
-                    return (
-                      <div key={questionIndex} className="group hover:bg-muted/20 transition-colors rounded-lg p-1">
-                        <div className="flex items-start gap-3">
-                          <GripVertical className="h-4 w-4 text-muted-foreground mt-3 cursor-move opacity-0 group-hover:opacity-60 transition-opacity" />
-                          
-                          <div className="flex-1 space-y-2">
-                            <div className="p-3 border rounded-md bg-muted/50 space-y-2 hover:bg-muted/70 transition-colors group-hover:border-muted-foreground/30">
-                              {!isEditing ? (
-                                <div className="flex items-start justify-between gap-2 group/question">
-                                  <p className="text-sm font-medium flex-1 cursor-pointer hover:text-primary transition-colors" 
-                                     onClick={() => startEditingQuestion(stage.id, questionIndex, q)}>
-                                    {q}
-                                  </p>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 w-7 p-0 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 transition-all duration-200"
-                                    onClick={() => startEditingQuestion(stage.id, questionIndex, q)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="space-y-2">
-                                  <Input
-                                    value={editQuestionText[questionKey] || ""}
-                                    onChange={(e) => setEditQuestionText({
-                                      ...editQuestionText,
-                                      [questionKey]: e.target.value
-                                    })}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        saveEditedQuestion(stage.id, questionIndex);
-                                      } else if (e.key === 'Escape') {
-                                        cancelEditingQuestion(stage.id, questionIndex);
-                                      }
-                                    }}
-                                    className="text-sm font-medium"
-                                    autoFocus
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => cancelEditingQuestion(stage.id, questionIndex)}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button 
-                                      size="sm"
-                                      onClick={() => saveEditedQuestion(stage.id, questionIndex)}
-                                    >
-                                      Save
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && !answerExamples[questionKey] && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs h-auto p-1 text-muted-foreground hover:text-primary"
-                                    onClick={() => setShowAnswerExample({...showAnswerExample, [questionKey]: true})}
-                                  >
-                                    + Add Example Answer
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-
-                            {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && showAnswerExample[questionKey] && (
-                              <div className="space-y-2">
-                                <div className="text-xs font-medium text-muted-foreground">Good Answer Example:</div>
-                                <Input
-                                  placeholder="Enter an example of a good answer..."
-                                  value={answerExamples[questionKey] || ""}
-                                  onChange={(e) => setAnswerExamples({
-                                    ...answerExamples,
-                                    [questionKey]: e.target.value
-                                  })}
-                                  className="text-xs"
-                                />
-                                <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="text-xs"
-                                    onClick={() => {
-                                      setShowAnswerExample({...showAnswerExample, [questionKey]: false});
-                                      setAnswerExamples({
-                                        ...answerExamples,
-                                        [questionKey]: ""
-                                      });
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button 
-                                    size="sm"
-                                    className="text-xs"
-                                    onClick={() => saveAnswerExample(questionKey, answerExamples[questionKey] || "")}
-                                  >
-                                    Save
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                            
-            {!isEditing && (stage.questionType === "open-ended" || stage.questionType === "mixed") && answerExamples[questionKey] && !showAnswerExample[questionKey] && (
-              <div className="mt-2 p-3 bg-accent/10 border border-primary/10 rounded-lg">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="text-xs font-medium text-primary mb-1">Example Answer:</div>
-                    <p className="text-xs text-foreground leading-relaxed">{answerExamples[questionKey]}</p>
+                
+                {stage.questions.length > 0 ? (
+                  stage.questions.map((q, questionIndex) => (
+                    <QuestionCard
+                      key={questionIndex}
+                      question={q}
+                      questionIndex={questionIndex}
+                      stageId={stage.id}
+                      isEditing={editingQuestion[`${stage.id}-${questionIndex}`]}
+                      editQuestionText={editQuestionText[`${stage.id}-${questionIndex}`]}
+                      onEditChange={() => startEditingQuestion(stage.id, questionIndex, q)}
+                      onEditSave={() => saveEditedQuestion(stage.id, questionIndex)}
+                      onEditCancel={() => cancelEditingQuestion(stage.id, questionIndex)}
+                      onDelete={() => removeQuestionFromStage(stage.id, questionIndex)}
+                      questionType={individualQuestionTypes[`${stage.id}-${questionIndex}`]}
+                      individualQuestionTypes={individualQuestionTypes}
+                      setIndividualQuestionTypes={setIndividualQuestionTypes}
+                      answerExamples={answerExamples}
+                      showAnswerExample={showAnswerExample}
+                      setShowAnswerExample={setShowAnswerExample}
+                      saveAnswerExample={saveAnswerExample}
+                      mcqOptions={mcqOptions}
+                      updateMcqOption={updateMcqOption}
+                      mcqCorrectAnswers={mcqCorrectAnswers}
+                      setCorrectAnswer={setCorrectAnswer}
+                      showMcqConfig={showMcqConfig}
+                      toggleMcqConfig={toggleMcqConfig}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground flex flex-col items-center gap-4">
+                    No questions added yet.
+                    <div className="flex gap-3 justify-center">
+                      <Button onClick={() => addGeneratedQuestionsToStage(stage.id)} className="bg-secondary text-secondary-foreground">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Questions
+                      </Button>
+                    </div>
+                    <div className="text-xs text-muted-foreground">Use the button above to quickly generate questions for this round.</div>
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    className="text-xs h-6 w-6 p-0 text-muted-foreground hover:text-primary"
-                    onClick={() => setShowAnswerExample({...showAnswerExample, [questionKey]: true})}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
+                )}
+                
+                {/* Add Question Button at the bottom */}
+                <div className="mt-6 pt-6 border-t border-border/50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Type your question here..."
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            addQuestionToStage(stage.id);
+                          }
+                        }}
+                        className="text-sm"
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => addQuestionToStage(stage.id)}
+                      disabled={!question.trim()}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 font-medium"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Press Enter or click "Add Question" to add this question to the interview
+                  </p>
                 </div>
               </div>
             )}
-
-                            {(stage.questionType === "mcq" || stage.questionType === "mixed") && !isEditing && (
-                              <div className="space-y-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => toggleMcqConfig(questionKey)}
-                                  className="text-xs"
-                                >
-                                  {showMcqConfig[questionKey] ? 'Hide MCQ Options' : 'Configure MCQ Options'}
-                                </Button>
-                                
-                                {showMcqConfig[questionKey] && (
-                                  <div className="space-y-2 p-3 border rounded-md bg-muted/30">
-                                    <div className="text-xs font-medium text-muted-foreground">Multiple Choice Options:</div>
-                                    {[0, 1, 2, 3].map((optionIndex) => (
-                                      <div key={optionIndex} className="flex items-center gap-2">
-                                        <span className="text-xs w-6">{String.fromCharCode(65 + optionIndex)}.</span>
-                                        <Input
-                                          placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
-                                          value={mcqOptions[questionKey]?.[optionIndex] || ""}
-                                          onChange={(e) => updateMcqOption(questionKey, optionIndex, e.target.value)}
-                                          className="flex-1 text-xs"
-                                        />
-                                        <Button
-                                          variant={mcqCorrectAnswers[questionKey] === optionIndex ? "default" : "outline"}
-                                          size="sm"
-                                          onClick={() => setCorrectAnswer(questionKey, optionIndex)}
-                                          className="text-xs"
-                                        >
-                                          {mcqCorrectAnswers[questionKey] === optionIndex ? 'Correct' : 'Mark Correct'}
-                                        </Button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
-                            onClick={() => removeQuestionFromStage(stage.id, questionIndex)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                 <div className="text-center py-8 text-muted-foreground">
-                   No questions added yet. Use the "Add Question" button below to get started.
-                 </div>
-               )}
-               
-               {/* Add Question Button at the bottom */}
-               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/50">
-                 <Input
-                   placeholder="Add new question"
-                   value={question}
-                   onChange={(e) => setQuestion(e.target.value)}
-                   onKeyDown={(e) => {
-                     if (e.key === 'Enter') {
-                       addQuestionToStage(stage.id);
-                     }
-                   }}
-                   className="flex-1"
-                 />
-                 <Button 
-                   onClick={() => addQuestionToStage(stage.id)}
-                   className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                 >
-                   <Plus className="h-4 w-4" />
-                 </Button>
-               </div>
-             </div>
-           </div>
-         </div>
-       ))}
+          </div>
+        </div>
+      ))}
 
       {/* Add New Stage Button */}
       <Button 
@@ -956,7 +1064,6 @@ export const InterviewProcess = () => {
             <DialogTitle>Create Custom Question Template</DialogTitle>
             <p className="text-sm text-muted-foreground">Build a reusable question set for specific roles or interview types</p>
           </DialogHeader>
-          <div className="space-y-6">
             <div>
               <Label htmlFor="templateName" className="text-sm font-medium">Template Name</Label>
               <Input
@@ -967,52 +1074,207 @@ export const InterviewProcess = () => {
                 className="mt-1"
               />
             </div>
+            {/* Removed job role/description input */}
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={async () => {
+                  setIsGeneratingQuestions(true);
+                  try {
+                    const questions = await generateQuestionsWithAI("Software Engineer", 5, "mixed"); // Default job role
+                    if (questions.length > 0) {
+                      setTemplateQuestions(questions);
+                    }
+                  } catch (err) {
+                    // Optionally show error
+                  } finally {
+                    setIsGeneratingQuestions(false);
+                  }
+                }}
+                disabled={!newTemplateName.trim() || isGeneratingQuestions}
+                className="bg-primary text-primary-foreground"
+              >
+                {isGeneratingQuestions ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Questions
+                  </>
+                )}
+              </Button>
+            </div>
             
             <div>
               <Label className="text-sm font-medium">Questions</Label>
-              <div className="space-y-4 mt-2">
-                {templateQuestions.map((question, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-3 bg-muted/20">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">Question {index + 1}</span>
-                          <Select defaultValue="open-ended">
-                            <SelectTrigger className="w-32 h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open-ended">Open-ended</SelectItem>
-                              <SelectItem value="mcq">Multiple Choice</SelectItem>
-                            </SelectContent>
-                          </Select>
+              <div className="space-y-3">
+                {templateQuestions.map((question, index) => {
+                  const questionType = templateQuestionTypes[index] || "text-based";
+                  
+                  return (
+                    <div key={index} className="group hover:bg-muted/20 transition-colors rounded-lg p-1">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="p-3 border rounded-md bg-muted/50 space-y-2 hover:bg-muted/70 transition-colors group-hover:border-muted-foreground/30">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground">Question {index + 1}</span>
+                                <Select 
+                                  value={questionType} 
+                                  onValueChange={(value) => updateTemplateQuestionType(index, value)}
+                                >
+                                  <SelectTrigger className="w-32 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="text-based">Text-based</SelectItem>
+                                    <SelectItem value="mcq">MCQ</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <Input
+                              placeholder="Enter your interview question..."
+                              value={question}
+                              onChange={(e) => updateTemplateQuestion(index, e.target.value)}
+                              className="text-sm font-medium"
+                            />
+                            
+                            {/* Answer Example Section */}
+                            {(questionType === "text-based") && (
+                              <div className="space-y-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setTemplateShowAnswerExample({...templateShowAnswerExample, [index]: !templateShowAnswerExample[index]})}
+                                  className="text-xs"
+                                >
+                                  {templateShowAnswerExample[index] ? 'Hide Answer Example' : 'Add Answer Example'}
+                                </Button>
+                                
+                                {templateShowAnswerExample[index] && (
+                                  <div className="space-y-2">
+                                    <div className="text-xs font-medium text-muted-foreground">Good Answer Example:</div>
+                                    <Input
+                                      placeholder="Enter an example of a good answer..."
+                                      value={templateAnswerExamples[index] || ""}
+                                      onChange={(e) => setTemplateAnswerExamples({
+                                        ...templateAnswerExamples,
+                                        [index]: e.target.value
+                                      })}
+                                      className="text-xs"
+                                    />
+                                  </div>
+                                )}
+                                
+                                {templateAnswerExamples[index] && !templateShowAnswerExample[index] && (
+                                  <div className="mt-2 p-3 bg-accent/10 border border-primary/10 rounded-lg">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <div className="text-xs font-medium text-primary mb-1">Example Answer:</div>
+                                        <p className="text-xs text-foreground leading-relaxed">{templateAnswerExamples[index]}</p>
+                                      </div>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost"
+                                        className="text-xs h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                        onClick={() => setTemplateShowAnswerExample({...templateShowAnswerExample, [index]: true})}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* MCQ Configuration Section */}
+                            {questionType === "mcq" && (
+                              <div className="space-y-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => toggleTemplateMcqConfig(index)}
+                                  className="text-xs"
+                                >
+                                  {templateShowMcqConfig[index] ? 'Hide MCQ Options' : 'Configure MCQ Options'}
+                                </Button>
+                                
+                                {templateShowMcqConfig[index] && (
+                                  <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                                    <div className="text-xs font-medium text-muted-foreground">Multiple Choice Options:</div>
+                                    {templateMcqOptions[index]?.map((option, optionIndex) => (
+                                      <div key={optionIndex} className="flex items-center gap-2">
+                                        <span className="text-xs w-6">{String.fromCharCode(65 + optionIndex)}.</span>
+                                        <Input
+                                          placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                                          value={option}
+                                          onChange={(e) => updateTemplateMcqOption(index, optionIndex, e.target.value)}
+                                          className="flex-1 text-xs"
+                                        />
+                                        <Button
+                                          variant={templateMcqCorrectAnswers[index] === optionIndex ? "default" : "outline"}
+                                          size="sm"
+                                          onClick={() => setTemplateCorrectAnswer(index, optionIndex)}
+                                          className="text-xs"
+                                        >
+                                          {templateMcqCorrectAnswers[index] === optionIndex ? 'Correct' : 'Mark Correct'}
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-xs"
+                                          onClick={() => {
+                                            if ((templateMcqOptions[index]?.length || 0) > 2) {
+                                              const newOptions = [...(templateMcqOptions[index] || [])];
+                                              newOptions.splice(optionIndex, 1);
+                                              setTemplateMcqOptions({ ...templateMcqOptions, [index]: newOptions });
+                                            }
+                                          }}
+                                          disabled={(templateMcqOptions[index]?.length || 0) <= 2}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    ))}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs mt-2"
+                                      onClick={() => {
+                                        setTemplateMcqOptions({
+                                          ...templateMcqOptions,
+                                          [index]: [...(templateMcqOptions[index] || ["",""]), ""]
+                                        });
+                                      }}
+                                    >
+                                      + Add Option
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <Input
-                          placeholder="Enter your interview question..."
-                          value={question}
-                          onChange={(e) => updateTemplateQuestion(index, e.target.value)}
-                          className="text-sm"
-                        />
-                        <div className="space-y-2">
-                          <Input
-                            placeholder="Optional: Add an example of a good answer..."
-                            className="text-xs border-dashed"
-                          />
-                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
+                          onClick={() => removeTemplateQuestion(index)}
+                          disabled={templateQuestions.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeTemplateQuestion(index)}
-                        disabled={templateQuestions.length === 1}
-                        className="text-destructive hover:text-destructive mt-6"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
-                
+                  );
+                })}
+              </div>
+            </div>
                 <Button 
                   variant="outline" 
                   onClick={addTemplateQuestion}
@@ -1021,8 +1283,72 @@ export const InterviewProcess = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Add Another Question
                 </Button>
-              </div>
-            </div>
+                
+                {/* AI Question Generator for Template */}
+                <div className="mt-4 pt-4 border-t border-border/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">AI Question Generator</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAiGenerator(!showAiGenerator)}
+                      className="text-xs"
+                    >
+                      {showAiGenerator ? 'Hide' : 'Generate Questions'}
+                    </Button>
+                  </div>
+                  
+                  {showAiGenerator && (
+                    <div className="space-y-3 p-4 bg-muted/20 rounded-lg border">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs font-medium">Job Role</Label>
+                          <Input
+                            placeholder="e.g., Software Engineer, Product Manager"
+                            value={aiJobRole}
+                            onChange={(e) => setAiJobRole(e.target.value)}
+                            className="text-xs mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-medium">Number of Questions</Label>
+                          <Select value={aiQuestionCount.toString()} onValueChange={(value) => setAiQuestionCount(parseInt(value))}>
+                            <SelectTrigger className="text-xs mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3">3 questions</SelectItem>
+                              <SelectItem value="5">5 questions</SelectItem>
+                              <SelectItem value="8">8 questions</SelectItem>
+                              <SelectItem value="10">10 questions</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={addGeneratedQuestionsToTemplate}
+                        disabled={!aiJobRole.trim() || isGeneratingQuestions}
+                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+                      >
+                        {isGeneratingQuestions ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                            Generating Questions...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate AI Questions
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
             
             <div className="flex gap-3 justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => setIsCreatingTemplate(false)}>
@@ -1032,7 +1358,6 @@ export const InterviewProcess = () => {
                 Save Template
               </Button>
             </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
